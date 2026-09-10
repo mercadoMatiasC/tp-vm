@@ -3,40 +3,43 @@
 #include <stdint.h>   //INCLUYE EL TIPO uint8_t
 #include <string.h>
 
+#define TAMCABECERA 8
 #define RAM_SIZE 16384
 #define IDENTIFICADOR "VMX26"
 
 uint8_t MAIN_MEMORY[RAM_SIZE];
 
 //DEFINICIONES
-int validarCabecera(char nombre[]);
+int validarCabecera(uint8_t cabecera[]);
 
 //IMPLEMENTACIONES
-int validarCabecera(char nombre[]){
-    FILE *archExe = fopen(nombre, "rb");
+int validarCabecera(uint8_t cabecera[]){
 
-    //CABECERA
     char id[6];
-    uint8_t version;
-    uint16_t codeSize;
+    uint8_t version=cabecera[5];
+    uint16_t codeSize= ( (uint16_t)cabecera[6]<<8) | cabecera[7];
 
-    if (archExe){
-        fread(id, 5, 1, archExe);
-        fread(&version, sizeof(uint8_t), 1, archExe);
-        fread(&codeSize, sizeof(uint16_t), 1, archExe);
+    memcpy(id,cabecera,5);
+    id[5]='\0'; 
 
-        codeSize = (codeSize << 8) | (codeSize >> 8); //CAMBIO DE CODIFICACION
-
-        if (!strcmp(id, IDENTIFICADOR)){
-            printf("ARCHIVO VALIDO!: ID: %s | VER:  %u | SIZE:  %u", id, version, codeSize);
-            return 1;
-        }else
-            return 0;
-    }
+    if (!strcmp(id, IDENTIFICADOR)){
+        printf("ARCHIVO VALIDO!: ID: %s | VER:  %u | SIZE:  %u", id, version, codeSize);
+        return 1;
+    }else
+        return 0;
 }
 
 int main(){
-    int respuesta = validarCabecera("main.vmx");
+    FILE *archExe = fopen("main.vmx", "rb");
+    char id[6];
+    uint8_t cabecera[TAMCABECERA]; //vector de 8 bytes
+
+    if(archExe){
+        fread(cabecera, sizeof(uint8_t), 8,archExe);
+        if(validarCabecera(cabecera))
+            printf("Valido");
+    }
+    
 
     return 0;
 }
