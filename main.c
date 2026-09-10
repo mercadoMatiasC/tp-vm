@@ -8,12 +8,15 @@
 #define TAM_RAM 16384
 #define ID "VMX26"
 #define VERSION 1
+#define CANT_REGISTROS
 
 
 
 //DEFINICIONES
 int validarCabecera(uint8_t cabecera[]);
-void iniciarTablaSegmentos(uint3)
+void iniciarTablaSegmentos(uint32_t tabla[],uint16_t tamCodigo);
+
+
 //IMPLEMENTACIONES
 int validarCabecera(uint8_t cabecera[]){
 
@@ -35,14 +38,14 @@ int main(){
     uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
     uint32_t segTabla[CANT_SEGMENTOS]
     uint16_t tamCodigo;
+    uint32_t regTabla[CANT_REGISTROS]
 
     if(archExe){
         fread(cabecera, sizeof(uint8_t), 8,archExe);
         if(validarCabecera(cabecera)){
             tamCodigo = ( (uint16_t)cabecera[6]<<8) | cabecera[7];
             fread(memoriaPrincipal,sizeof(uint8_t),tamCodigo,archExe);
-            printf("%x\n",mainMemory[tamCodigo-1]);
-            //fread
+            /*Para recorrer todo el codigo while(!(ip<tamCodigo y ip!=-1)) o parecido*/
         }
     }
     
