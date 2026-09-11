@@ -2,31 +2,60 @@
 #include <stdio.h>
 #include <stdint.h>
 
+void nada(){
+    printf("nada\n");
+}
+void sys(void) {
+    printf("nada\n");
+}
+
+void jmp(void) {
+    printf("nada\n");
+}
+
+void jp(void) {
+    printf("nada\n");
+}
+
+void Jn(void) {
+    printf("nada\n");
+}
+
+void jz(void) {
+    printf("nada\n");
+}
+
+void jc(void) {
+    printf("nada\n");
+}
+
+void jv(void) {
+    printf("nada\n");
+}
+
+void jnp(void) {
+    printf("nada\n");
+}
+
+void jnn(void) {
+    printf("nada\n");
+}
+
+void jnz(void) {
+    printf("nada\n");
+}
+
+void not(void) {
+    printf("nada\n");
+}
+void mov(void){
+    printf("nada \n");
+}
+void add(uint32_t *destino, uint32_t origen) {
+    *destino = *destino + origen;
+   
+}
 
 
-typedef void op2operandos(int16_t *,int16_t *);
 
-void mov(int16_t *a,int16_t *b){
-    *a=*b;
-}
-void add(int16_t *a,int16_t *b){
-    *a+=*b;
-}
-void sub(int16_t *a,int16_t *b){
-    *a-=*b;
-}
-int esNegativo(int16_t a){
-    return (a&(0x8000))>>15 & 0x0001; //seria mejor comparar con !=0 en lugar de 0x0001?
-}
-int esCero(int16_t a){
-    return a==0;
-}
-int esPositivo(int16_t a){
-    return !esNegativo(a) && !esCero(a);
-}
-int igualSigno(int16_t a,int16_t b){
-    return esNegativo(a)==esNegativo(b);
-}
-int esDesbordamiento(int16_t a,int16_t b,int16_t res){
-    return igualSigno(a,b) && !igualSigno(a,res) ;
-}
+
