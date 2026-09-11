@@ -5,57 +5,67 @@
 void nada(){
     printf("nada\n");
 }
+
 void sys(void) {
-    printf("nada\n");
+    printf("SYS \n");
 }
 
 void jmp(void) {
-    printf("nada\n");
+    printf("JPM \n");
 }
 
 void jp(void) {
-    printf("nada\n");
+    printf("JP \n");
 }
 
 void Jn(void) {
-    printf("nada\n");
+    printf("JN \n");
 }
 
 void jz(void) {
-    printf("nada\n");
+    printf("JZ \n");
 }
 
 void jc(void) {
-    printf("nada\n");
+    printf("JC \n");
 }
 
 void jv(void) {
-    printf("nada\n");
+    printf("JV \n");
 }
 
 void jnp(void) {
-    printf("nada\n");
+    printf("JNP \n");
 }
 
 void jnn(void) {
-    printf("nada\n");
+    printf("JNN \n");
 }
 
 void jnz(void) {
-    printf("nada\n");
+    printf("JNZ \n");
 }
 
 void not(void) {
-    printf("nada\n");
+    printf("NOT \n");
 }
+
 void mov(void){
-    printf("nada \n");
+    printf("MOV \n");
 }
-void add(uint32_t *destino, uint32_t origen) {
+
+void add(uint32_t *destino, uint32_t origen) { //FALTA ACTUALIZAR CC
     *destino = *destino + origen;
-   
 }
 
+void sub(uint32_t *destino, uint32_t origen) { //FALTA ACTUALIZAR CC
+    *destino = *destino - origen;
+}
 
+void mul(uint32_t *destino, uint32_t origen) { //FALTA ACTUALIZAR CC
+    *destino = *destino*origen;
+}
 
-
+void div(uint32_t *destino, uint32_t origen) { //FALTA ACTUALIZAR CC Y AC
+    *destino = *destino/origen;
+}
