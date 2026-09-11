@@ -22,6 +22,7 @@ typedef struct{
 int validarCabecera(uint8_t[]);
 void iniciarTablaSegmentos(regSegmento[],int);
 void iniciarRegistros(uint32_t[],uint16_t);
+uint32_t convertirDirecLogica(uint32_t direcLogica,regSegmento segTabla[]);
 //IMPLEMENTACIONES
 int validarCabecera(uint8_t cabecera[]){
 
@@ -55,11 +56,19 @@ void iniciarRegistros(uint32_t registros[],uint16_t tamCodigo){
 
     memset(registros, 0, sizeof(uint32_t)*CANT_REGISTROS); // inicializo todo en 0 para mantener limpieza
 
-    registros[26] = 0x00000000;                             // defino el registro CS, 4High = id segmento, 4Low offset
-    registros[27] = (0x0001 << 16) | tamCodigo;             // defino el registro DS, 4High = id segmento, 4Low offset
+    registros[26] = 0x00000000;                             // defino el registro CS, 4High = id segmento, 
+    registros[27] = 0x0001 << 16;             // defino el registro DS, 4High = id segmento, 
     registros[0] = registros[26];                           // defino IP apuntando al primer byte del segmento de codigo
 
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
+}
+
+uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
+    int codSeg=(direcLogica>>16)&0x0000FFFF; /*La mascara es por si cambiamos direcLogica a int para evitar extension de signo*/
+    int offset=direcLogica & 0x0000FFFF; //Obtengo el desplazamiento de la direcLogica
+    uint32_t direcBase=segTabla[codSeg].base;//Obtengo de la tabla de descriptores la direc base
+    return direcBase + offset;
+
 }
 
 int main(){
@@ -73,6 +82,8 @@ int main(){
     uint16_t tamCodigo;
     uint32_t regTabla[CANT_REGISTROS];
 
+    uint8_t instruccion;
+
     if(archExe){
         fread(cabecera, sizeof(uint8_t), 8,archExe);
         if(validarCabecera(cabecera)){
@@ -85,6 +96,12 @@ int main(){
             iniciarRegistros(regTabla,tamCodigo);
 
             fread(memoriaPrincipal,sizeof(uint8_t),tamCodigo,archExe);
+
+            instruccion=memoriaPrincipal[convertirDirecLogica(regTabla[0],segTabla)];
+            printf("%X",instruccion);
+            
+
+
             
             
             
