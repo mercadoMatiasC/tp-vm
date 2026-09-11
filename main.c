@@ -23,6 +23,11 @@ int validarCabecera(uint8_t[]);
 void iniciarTablaSegmentos(regSegmento[],int);
 void iniciarRegistros(uint32_t[],uint16_t);
 uint32_t convertirDirecLogica(uint32_t direcLogica,regSegmento segTabla[]);
+void asignoRegsOperar(uint32_t regTabla[],uint8_t instruccion,uint8_t memoriaPrincipal[],uint32_t direcFisicaIns);
+uint32_t calcularTamInstruccion(uint8_t instruccion);
+uint32_t* valorOpGenerico(uint32_t regOp,uint8_t memoriaPrincipal[],regSegmento segTabla[],uint32_t regTabla[] );
+
+
 //IMPLEMENTACIONES
 int validarCabecera(uint8_t cabecera[]){
 
@@ -71,18 +76,101 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
 
 }
 
+void asignoRegsOperar(uint32_t regTabla[],uint8_t instruccion,uint8_t memoriaPrincipal[],uint32_t direcFisicaIns){
+    uint32_t auxTipo,tip1,tip2,op1,op2;
+    int tamInstruccion=1,i;
+    regTabla[1]=instruccion & 0x1F; //Al registro OPC le asigno el codigo de la instruccion
+    auxTipo=(instruccion>>4) & 0x03; //Guardo el tipo que esta en los bits 5 y 4
+    if(auxTipo==0x00){//instruccion de 1 o ningun operando
+        tip1=(instruccion>>6) & 0x03; //Como los bits 5 y 4 son cero, a operandoA/registro OP1 le corresponden los bits 7 y 6 
+        tip2=auxTipo;
+    }
+    else{//instruccion de 2 operandos
+        tip1=auxTipo;//Guardo el tipo del operando A/registro OP1
+        tip2=(instruccion>>6) & 0x03; //Guardo el tipo del operando B/registro OP2
+                                    // Aclaracion: la mascara es por si a regTabla pasa a ser int32_t
+    }
+    regTabla[2]=tip1<<24;//Dejo en los 8 bits mas significativos el tipo de operando
+    regTabla[3]=tip2<<24;//Si el tipo fuera cero al desplazar 24 bits, todo el registro queda en cero
+
+    //Por ultimo se asignan los valores de los operandos
+    op1=0x0;
+    op2=0x0; //si sus tipos son cero entonces los operandos seran cero
+    
+    for(i=0;i<tip2;i++){
+        op2=(op2<<8) | (uint8_t)memoriaPrincipal[direcFisicaIns+tamInstruccion];//Lee un byte de la memoria principal
+        //el casteo es por si luego memoria queda con int32
+        tamInstruccion++;//El tamanio de la instruccion incremento un byte
+    }
+    for(i=0;i<tip1;i++){
+        op1=(op1<<8) | (uint8_t)memoriaPrincipal[direcFisicaIns+tamInstruccion];
+        tamInstruccion++;
+    }
+    regTabla[2]=regTabla[2] | op1;
+    regTabla[3]=regTabla[3] | op2;
+
+}
+uint32_t tamInstruccion(uint8_t instruccion){
+    uint32_t tamAux=1;//De por si la instruccion es minimo de 1 byte por el codigo de operacion
+    uint32_t tipo1,tipo2;
+    tipo1=(instruccion>>4) & 0x03; //Guardo el tipo que esta en los bits 5 y 4
+    tipo2=(instruccion>>6) & 0x03;//Guardo el tipo que esta en los bit 6 y 7
+    tamAux+=tipo1+tipo2;
+    return tamAux;
+}
+
+uint32_t* valorOpGenerico(uint32_t regOp,uint8_t memoriaPrincipal[],regSegmento segTabla[],uint32_t regTabla[] ){
+    uint32_t codOp=(regOp>>24) & 0x000000FF;
+    uint32_t codReg=regOp & 0x0000001F;
+    uint32_t offset,direcLogica,direcFisica;
+
+    if(codOp==1)//operando de registro
+        return &regTabla[codReg];
+    else{//operando de memoria
+        offset=(regOp>>8) & 0x0000FFFF;
+        direcLogica=offset+regTabla[codReg];
+        direcFisica=convertirDirecLogica(direcLogica,segTabla);
+        // Castea el puntero de uint8_t* a uint32_t* para acceder a 4 bytes continuos
+        return (uint32_t *)&memoriaPrincipal[direcFisica];
+    }
+}
+
+
 int main(){
     FILE *archExe = fopen("ejemplo.vmx", "rb");
 
-    //inst vecInstrucciones[CANT_INSTRUCCIONES]={mov};
+    inst vecInstrucciones[CANT_INSTRUCCIONES] = {
+    (inst)sys,
+    (inst)jmp,
+    (inst)jp,
+    (inst)Jn,
+    (inst)jz,
+    (inst)jc,
+    (inst)jv,
+    (inst)jnp,
+    (inst)jnn,
+    (inst)jnz,
+    (inst)not,
 
-    int8_t memoriaPrincipal[TAM_RAM];
+    (inst)nada,
+    (inst)nada,
+    (inst)nada,
+    (inst)nada,
+    (inst)nada,
+
+
+    (inst)mov,
+    (inst)add
+};
+
+    uint8_t memoriaPrincipal[TAM_RAM];
     uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
     regSegmento segTabla[CANT_SEGMENTOS];
     uint16_t tamCodigo;
     uint32_t regTabla[CANT_REGISTROS];
 
     uint8_t instruccion;
+    uint32_t direcFisicaIns,codIns,codOp1,codOp2,op1,op2;
 
     if(archExe){
         fread(cabecera, sizeof(uint8_t), 8,archExe);
@@ -96,21 +184,41 @@ int main(){
             iniciarRegistros(regTabla,tamCodigo);
 
             fread(memoriaPrincipal,sizeof(uint8_t),tamCodigo,archExe);
+            
+            /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
+            por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
+            direcFisicaIns=convertirDirecLogica(regTabla[0],segTabla);
+            instruccion=memoriaPrincipal[direcFisicaIns];
 
-            instruccion=memoriaPrincipal[convertirDirecLogica(regTabla[0],segTabla)];
-            printf("%X",instruccion);
+
+            //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
+            asignoRegsOperar(regTabla,instruccion,memoriaPrincipal,direcFisicaIns);
+
+            //Actualizo IP
+            regTabla[0]+=tamInstruccion(instruccion);
+            
+            printf("[%04X] instruccion:%X op1: %08X op2: %08X \n",direcFisicaIns,instruccion,regTabla[3],regTabla[2]);
+
+            //Ejecuto la instruccion
+            codIns=instruccion & 0x1F;
+            //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
+            //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
+            if(codIns>=0x10 && codIns<=0x1F){//Instruccion de 2 operandos
+                codOp1=(regTabla[2]>>24)&0x000000FF;
+                codOp2=(regTabla[3]>>24)&0x000000FF;
+                if(codOp2==2)
+                    op2=regTabla[3] & 0x00FFFFFF;
+                else
+                    op2=*(valorOpGenerico(regTabla[3],memoriaPrincipal,segTabla,regTabla));
+                
+               
+               ((void (*)(uint32_t*, uint32_t))vecInstrucciones[codIns])(valorOpGenerico(regTabla[2],memoriaPrincipal,segTabla,regTabla), op2);
+                printf("%X",regTabla[10]);
+
+            }
+           
             
 
-
-            
-            
-            
-                
-                
-                
-                
-
-            
 
 
         }

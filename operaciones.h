@@ -1,4 +1,7 @@
 typedef void (*inst)(void);
+
+void nada(void);
+
 void sys(void);
 void jmp(void);
 void jp(void);
