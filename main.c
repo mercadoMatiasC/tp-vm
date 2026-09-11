@@ -3,40 +3,52 @@
 #include <stdint.h>   //INCLUYE EL TIPO uint8_t
 #include <string.h>
 
-#define RAM_SIZE 16384
-#define IDENTIFICADOR "VMX26"
+#define TAM_CABECERA 8
+#define CANT_SEGMENTOS 8
+#define TAM_RAM 16384
+#define ID "VMX26"
+#define VERSION 1
+#define CANT_REGISTROS
 
-uint8_t MAIN_MEMORY[RAM_SIZE];
+
 
 //DEFINICIONES
-int validarCabecera(char nombre[]);
+int validarCabecera(uint8_t cabecera[]);
+void iniciarTablaSegmentos(uint32_t tabla[],uint16_t tamCodigo);
+
 
 //IMPLEMENTACIONES
-int validarCabecera(char nombre[]){
-    FILE *archExe = fopen(nombre, "rb");
+int validarCabecera(uint8_t cabecera[]){
 
-    //CABECERA
     char id[6];
-    uint8_t version;
-    uint16_t codeSize;
+    uint8_t version=cabecera[5];
 
-    if (archExe){
-        fread(id, 5, 1, archExe);
-        fread(&version, sizeof(uint8_t), 1, archExe);
-        fread(&codeSize, sizeof(uint16_t), 1, archExe);
+    memcpy(id,cabecera,5); //copia al vector id los primeros 5 bytes de cabecera
+    id[5]='\0'; 
 
-        codeSize = (codeSize << 8) | (codeSize >> 8); //CAMBIO DE CODIFICACION
-
-        if (!strcmp(id, IDENTIFICADOR)){
-            printf("ARCHIVO VALIDO!: ID: %s | VER:  %u | SIZE:  %u", id, version, codeSize);
-            return 1;
-        }else
-            return 0;
-    }
+    if (!strcmp(id, ID) && version==VERSION){
+        return 1;
+    }else
+        return 0;
 }
 
 int main(){
-    int respuesta = validarCabecera("main.vmx");
+    FILE *archExe = fopen("main.vmx", "rb");
+    uint8_t memoriaPrincipal[TAM_RAM];
+    uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
+    uint32_t segTabla[CANT_SEGMENTOS]
+    uint16_t tamCodigo;
+    uint32_t regTabla[CANT_REGISTROS]
+
+    if(archExe){
+        fread(cabecera, sizeof(uint8_t), 8,archExe);
+        if(validarCabecera(cabecera)){
+            tamCodigo = ( (uint16_t)cabecera[6]<<8) | cabecera[7];
+            fread(memoriaPrincipal,sizeof(uint8_t),tamCodigo,archExe);
+            /*Para recorrer todo el codigo while(!(ip<tamCodigo y ip!=-1)) o parecido*/
+        }
+    }
+    
 
     return 0;
 }
