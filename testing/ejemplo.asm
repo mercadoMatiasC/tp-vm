@@ -1,1 +1,2 @@
-ADD EAX,-3
+MOV EAX,2
+ADD EAX,3

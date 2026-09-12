@@ -1,3 +1,0 @@
-ADD [DS+5], 10
-SHL EAX, 16
-NOT EEX
