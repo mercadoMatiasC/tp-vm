@@ -210,10 +210,9 @@ int main(){
                     op2=regTabla[3] & 0x00FFFFFF;
                 else
                     op2=*(valorOpGenerico(regTabla[3],memoriaPrincipal,segTabla,regTabla));
-                
                
                ((void (*)(uint32_t*, uint32_t))vecInstrucciones[codIns])(valorOpGenerico(regTabla[2],memoriaPrincipal,segTabla,regTabla), op2);
-                printf("%X",regTabla[10]);
+                printf("%d",regTabla[10]);
 
             }
            

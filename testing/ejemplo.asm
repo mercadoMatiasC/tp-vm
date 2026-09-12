@@ -1,1 +1,1 @@
-ADD EAX,3
+ADD EAX,-3
