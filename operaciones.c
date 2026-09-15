@@ -104,7 +104,6 @@ void actualizarCC_General(int32_t op1, int32_t op2,  uint32_t regTabla[], int64_
         */
 
         //Faltan MUL Y DIV
-        */
     }
 
     // Actualizar el registro CC de la VMX26
