@@ -12,17 +12,13 @@
 #define VERSION 1
 #define CANT_REGISTROS 32
 
-typedef struct{
-  uint16_t base;
-  uint16_t tamaño;
-} regSegmento;
 
 
 //DEFINICIONES
 int validarCabecera(uint8_t[]);
 void iniciarTablaSegmentos(regSegmento[], int);
 void iniciarRegistros(uint32_t[]);
-uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]);
+
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns);
 uint32_t calcularTamInstruccion(uint8_t instruccion);
 uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegmento segTabla[], uint32_t regTabla[] );
@@ -66,13 +62,7 @@ void iniciarRegistros(uint32_t registros[]){
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
 }
 
-uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
-    int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
-    int offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
-    uint32_t direcBase=segTabla[codSeg].base; //Obtengo de la tabla de descriptores la direc base
 
-    return direcBase + offset;
-}
 
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns){
     uint32_t auxTipo,tip1,tip2,op1,op2;
@@ -123,7 +113,7 @@ uint32_t tamInstruccion(uint8_t instruccion){
     return tamAux;
 }
 
-uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegmento segTabla[], uint32_t regTabla[] ){
+/*uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegmento segTabla[], uint32_t regTabla[] ){
     uint32_t codOp=(regOp>>24) & 0x000000FF;
     uint32_t codReg=regOp & 0x0000001F;
     uint32_t offset, direcLogica, direcFisica;
@@ -138,7 +128,7 @@ uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegment
         // Castea el puntero de uint8_t* a uint32_t* para acceder a 4 bytes continuos
         return (uint32_t *)&memoriaPrincipal[direcFisica];
     }
-}
+}*/
 
 
 int main(){
@@ -213,18 +203,22 @@ int main(){
 
                 if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                     codOp1=(regTabla[2]>>24)&0x000000FF;
-                    codOp2=(regTabla[3]>>24)&0x000000FF;
+                    //codOp2=(regTabla[3]>>24)&0x000000FF;
 
-                    if(codOp2==2)
+                    /*if(codOp2==2)
                         op2=regTabla[3] & 0x00FFFFFF;
                     else
                         op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
-                    
-                
-                ((void (*)(uint32_t*, uint32_t))vecInstrucciones[codIns])(valorOpGenerico(regTabla[2],memoriaPrincipal,segTabla,regTabla), op2);
+                    */
+                    ((void (*)(uint32_t, uint32_t,uint32_t[],regSegmento[],uint8_t[]))vecInstrucciones[codIns])(regTabla[2],regTabla[3],regTabla,segTabla,memoriaPrincipal);
+                    if(codOp1==3){//memoria
+                        uint32_t valorEscrito=leerMemoria(regTabla[2],regTabla,segTabla,memoriaPrincipal);
+                        printf("Valor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
+                    }
                 }
 
-                printf("\nEAX: 0x%X", regTabla[10]); //VER REGISTRO EAX
+                //printf("\nEAX: 0x%X", regTabla[10]); //VER REGISTRO EAX
+
             }
         }else
             printf("CABECERA INVALIDA!");

@@ -1,2 +1,2 @@
-MOV EAX,2
-ADD EAX,3
+MOV [DS+3],2
+ADD [DS+3],3
