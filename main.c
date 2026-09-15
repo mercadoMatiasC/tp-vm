@@ -172,7 +172,7 @@ int main(){
         (inst)jnp,  //07
         (inst)jnn,  //08
         (inst)jnz,  //09
-        (inst)not,  //0A
+        (inst)Not,  //0A
 
         (inst)nada, //0B
         (inst)nada, //0C
