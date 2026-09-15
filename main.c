@@ -4,7 +4,7 @@
 #include <string.h>
 #include "operaciones.h"
 
-#define CANT_INSTRUCCIONES 26 
+#define CANT_INSTRUCCIONES 26
 #define TAM_CABECERA 8
 #define CANT_SEGMENTOS 8
 #define TAM_RAM 16384
@@ -17,7 +17,7 @@ void uint32ToBinario(uint32_t numero, char *binStr, size_t size) {
         if (size > 0) binStr[0] = '\0';
             return;
 
-    for (int i = 0; i < 32; i++) 
+    for (int i = 0; i < 32; i++)
         binStr[i] = (numero & (1u << (31 - i))) ? '1' : '0';
 
     binStr[32] = '\0';
@@ -65,8 +65,8 @@ void iniciarTablaSegmentos(regSegmento segmentos[], int n){
 void iniciarRegistros(uint32_t registros[]){
     memset(registros, 0, sizeof(uint32_t)*CANT_REGISTROS); // inicializo todo en 0 para mantener limpieza
 
-    registros[26] = 0x00000000;               // defino el registro CS, 4High = id segmento, 
-    registros[27] = 0x0001 << 16;             // defino el registro DS, 4High = id segmento, 
+    registros[26] = 0x00000000;               // defino el registro CS, 4High = id segmento,
+    registros[27] = 0x0001 << 16;             // defino el registro DS, 4High = id segmento,
     registros[0]  = registros[26];            // defino IP apuntando al primer byte del segmento de codigo
 
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
@@ -82,7 +82,7 @@ void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaP
     auxTipo=(instruccion>>4) & 0x03; //Guardo el tipo que esta en los bits 5 y 4
 
     if(auxTipo==0x00){//instruccion de 1 o ningun operando
-        tip1=(instruccion>>6) & 0x03; //Como los bits 5 y 4 son cero, a operandoA/registro OP1 le corresponden los bits 7 y 6 
+        tip1=(instruccion>>6) & 0x03; //Como los bits 5 y 4 son cero, a operandoA/registro OP1 le corresponden los bits 7 y 6
         tip2=auxTipo;
     }else{//instruccion de 2 operandos
         tip1=auxTipo;//Guardo el tipo del operando A/registro OP1
@@ -96,7 +96,7 @@ void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaP
     //Por ultimo se asignan los valores de los operandos
     op1=0x0;
     op2=0x0; //si sus tipos son cero entonces los operandos seran cero
-    
+
     for(i=0;i<tip2;i++){
         op2=(op2<<8) | (uint8_t)memoriaPrincipal[direcFisicaIns+tamInstruccion];//Lee un byte de la memoria principal
         //el casteo es por si luego memoria queda con int32
@@ -140,6 +140,33 @@ uint32_t tamInstruccion(uint8_t instruccion){
     }
 }*/
 
+void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
+
+    uint8_t tip1,tip2,vecAux[100];
+    int tamInstruccion=1,i,index=1;
+    tip1=regOP1>>24;
+    tip2=regOP2>>24;
+
+    vecAux[0]=instruccion;
+    for(i=0;i<tip2;i++){
+        vecAux[i+1]=(regOP2>>((tip2-1-i)*8))&0xFF; //almaceno a partir del byte 1 del regOP1
+        tamInstruccion++;//El tamanio de la instruccion incremento un byte
+    }
+
+
+    for(i=0;i<tip1;i++){
+        vecAux[i+1+tip2]=(regOP1>> ((tip1-1-i)*8)) &0xFF;
+        tamInstruccion++;
+    }
+
+
+    printf("\n [%04X] codIns: %02X ",direcFisica,vecAux[0]);
+    for(i=1;i<tamInstruccion;++i){
+        printf(" %02X ",vecAux[i]);
+    }
+
+}
+
 
 int main(){
     FILE *archExe = fopen("ejemplo.vmx", "rb");
@@ -155,7 +182,7 @@ int main(){
         (inst)jnp,  //07
         (inst)jnn,  //08
         (inst)jnz,  //09
-        (inst)not,  //0A
+        (inst)Not,  //0A
 
         (inst)nada, //0B
         (inst)nada, //0C
@@ -191,7 +218,7 @@ int main(){
             iniciarRegistros(regTabla);
 
             fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
-            
+
             while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
                 /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
                 por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
@@ -200,17 +227,17 @@ int main(){
 
                 //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                 asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-
+                disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
                 //Actualizo IP
                 regTabla[0]+=tamInstruccion(instruccion);
-                
-                printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
+
+                //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
 
                 //Ejecuto la instruccion
                 codIns=instruccion & 0x1F;
                 //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
                 //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
- 
+
                 if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                     codOp1=(regTabla[2]>>24)&0x000000FF;
                     //codOp2=(regTabla[3]>>24)&0x000000FF;
@@ -226,7 +253,7 @@ int main(){
                         printf("\nValor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
                     }
 
-                    //BORRAR    
+                    //BORRAR
                         printf("\nCC: %08X", regTabla[17]);
                     //BORRAR
 

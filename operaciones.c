@@ -11,6 +11,8 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
     return direcBase + offset;
 }
 
+
+
 uint32_t leerMemoria(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[],uint8_t memoriaPrincipal[]){
     uint32_t codReg=regOp & 0x0000001F;
     uint32_t offset, direcLogica, direcFisica;
@@ -19,11 +21,11 @@ uint32_t leerMemoria(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[]
     direcLogica=offset+regTabla[codReg];
     direcFisica=convertirDirecLogica(direcLogica, segTabla);
 
-    
+
     return ((uint32_t)memoriaPrincipal[direcFisica]<<24) | (uint32_t)(memoriaPrincipal[direcFisica+1]<<16) | (uint32_t)(memoriaPrincipal[direcFisica+2])<<8 | (uint32_t)(memoriaPrincipal[direcFisica+3]);
 }
 
-uint32_t escribirMemoria(uint32_t regOp,uint32_t valor, uint32_t regTabla[], regSegmento segTabla[],uint8_t memoriaPrincipal[]){
+void escribirMemoria(uint32_t regOp,uint32_t valor, uint32_t regTabla[], regSegmento segTabla[],uint8_t memoriaPrincipal[]){
     uint32_t codReg=regOp & 0x0000001F;
     uint32_t offset, direcLogica, direcFisica;
 
@@ -69,7 +71,7 @@ void actualizarCC_General(int32_t op1, int32_t op2,  uint32_t regTabla[], int64_
     uint32_t Z = (resultado == 0);
     uint32_t N = ((int64_t) resultado) < 0; //4294967295 = FFFFFFFF
     uint32_t C = 0, V = 0;
- 
+
     uint32_t b1 = ((int32_t) op1) < 0;//bit mas significativo de b1, idem con b2 y bR
     uint32_t b2 = ((int32_t) op2) < 0;
     uint32_t bR = ((int64_t) resultado) < 0;
@@ -82,12 +84,12 @@ void actualizarCC_General(int32_t op1, int32_t op2,  uint32_t regTabla[], int64_
             break;
 
         case 2://SUB Y CMP
-            C = (int64_t)resultado < (uint32_t)(op1);   //evaluo que el resultado sin signo sea menor al minuendo 
+            C = (int64_t)resultado < (uint32_t)(op1);   //evaluo que el resultado sin signo sea menor al minuendo
                                                         //Aclaracion: la resta de 2 numeros en binario es igual a la suma del primero con el complemento a2 del segundo.
                                                         //Por esa razon el criterio de C es identico al de la suma.
                                                         //A considerar si el = debe estar (unico caso en el que se cumple es al restar 0)
 
-            V = (b1 != b2) && (b1 != bR);//el signo del minuendo es distinto tanto del del substraendo como del resultado 
+            V = (b1 != b2) && (b1 != bR);//el signo del minuendo es distinto tanto del del substraendo como del resultado
             break;
 
         case 3://AND,OR,XOR,NOT,MOV
@@ -102,7 +104,7 @@ void actualizarCC_General(int32_t op1, int32_t op2,  uint32_t regTabla[], int64_
         */
 
         //Faltan MUL Y DIV
-        
+        */
     }
 
     // Actualizar el registro CC de la VMX26
@@ -110,7 +112,7 @@ void actualizarCC_General(int32_t op1, int32_t op2,  uint32_t regTabla[], int64_
 
     printf("\nN: %u, Z: %u, C: %u, V: %u", N, Z, C, V);
     printf("\nResultado: %016X", resultado);
-} 
+}
 
 void nada(){
     printf("nada\n");
@@ -188,4 +190,4 @@ void mul(void) { //FALTA ACTUALIZAR CC
 
 void div(void) { //FALTA ACTUALIZAR CC Y AC
     printf("nada");
-}
+    }
