@@ -154,7 +154,7 @@ void jnz(void) {
     printf("JNZ \n");
 }
 
-void not(void) {
+void Not(void) {
     printf("NOT \n");
 }
 
