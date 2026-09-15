@@ -1,2 +1,3 @@
 MOV [DS+3],2
 ADD [DS+3],3
+MOV [DS+8],[DS+3]
