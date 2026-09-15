@@ -11,6 +11,8 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
     return direcBase + offset;
 }
 
+
+
 uint32_t leerMemoria(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[],uint8_t memoriaPrincipal[]){
     uint32_t codReg=regOp & 0x0000001F;
     uint32_t offset, direcLogica, direcFisica;

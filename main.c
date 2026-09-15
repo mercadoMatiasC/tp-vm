@@ -130,6 +130,33 @@ uint32_t tamInstruccion(uint8_t instruccion){
     }
 }*/
 
+void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
+
+    uint8_t tip1,tip2,vecAux[100];
+    int tamInstruccion=1,i,index=1;
+    tip1=regOP1>>24;
+    tip2=regOP2>>24;
+    
+    vecAux[0]=instruccion;
+    for(i=0;i<tip2;i++){
+        vecAux[i+1]=(regOP2>>((tip2-1-i)*8))&0xFF; //almaceno a partir del byte 1 del regOP1 
+        tamInstruccion++;//El tamanio de la instruccion incremento un byte
+    }
+    
+
+    for(i=0;i<tip1;i++){
+        vecAux[i+1+tip2]=(regOP1>> ((tip1-1-i)*8)) &0xFF; 
+        tamInstruccion++;
+    }
+
+    
+    printf("\n [%04X] codIns: %02X ",direcFisica,vecAux[0]);
+    for(i=1;i<tamInstruccion;++i){
+        printf(" %02X ",vecAux[i]);
+    }
+
+}
+
 
 int main(){
     FILE *archExe = fopen("ejemplo.vmx", "rb");
@@ -190,11 +217,11 @@ int main(){
 
                 //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                 asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-
+                disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
                 //Actualizo IP
                 regTabla[0]+=tamInstruccion(instruccion);
                 
-                printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
+                //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
 
                 //Ejecuto la instruccion
                 codIns=instruccion & 0x1F;
@@ -213,7 +240,7 @@ int main(){
                     ((void (*)(uint32_t, uint32_t,uint32_t[],regSegmento[],uint8_t[]))vecInstrucciones[codIns])(regTabla[2],regTabla[3],regTabla,segTabla,memoriaPrincipal);
                     if(codOp1==3){//memoria
                         uint32_t valorEscrito=leerMemoria(regTabla[2],regTabla,segTabla,memoriaPrincipal);
-                        printf("Valor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
+                        //printf("Valor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
                     }
                 }
 
