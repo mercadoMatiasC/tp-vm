@@ -12,6 +12,16 @@
 #define VERSION 1
 #define CANT_REGISTROS 32
 
+void uint32ToBinario(uint32_t numero, char *binStr, size_t size) {
+    if (binStr == NULL || size < 33)
+        if (size > 0) binStr[0] = '\0';
+            return;
+
+    for (int i = 0; i < 32; i++) 
+        binStr[i] = (numero & (1u << (31 - i))) ? '1' : '0';
+
+    binStr[32] = '\0';
+}
 
 
 //DEFINICIONES
@@ -200,7 +210,7 @@ int main(){
                 codIns=instruccion & 0x1F;
                 //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
                 //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
-
+ 
                 if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                     codOp1=(regTabla[2]>>24)&0x000000FF;
                     //codOp2=(regTabla[3]>>24)&0x000000FF;
@@ -213,15 +223,20 @@ int main(){
                     ((void (*)(uint32_t, uint32_t,uint32_t[],regSegmento[],uint8_t[]))vecInstrucciones[codIns])(regTabla[2],regTabla[3],regTabla,segTabla,memoriaPrincipal);
                     if(codOp1==3){//memoria
                         uint32_t valorEscrito=leerMemoria(regTabla[2],regTabla,segTabla,memoriaPrincipal);
-                        printf("Valor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
+                        printf("\nValor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
                     }
+
+                    //BORRAR    
+                        printf("\nCC: %08X", regTabla[17]);
+                    //BORRAR
+
                 }
 
                 //printf("\nEAX: 0x%X", regTabla[10]); //VER REGISTRO EAX
 
             }
         }else
-            printf("CABECERA INVALIDA!");
+            printf("\nCABECERA INVALIDA!");
 
         fclose(archExe);
     }
