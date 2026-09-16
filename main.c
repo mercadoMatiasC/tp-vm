@@ -158,100 +158,107 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
 }
 
 
-int main(){
-    FILE *archExe = fopen("ejemplo.vmx", "rb");
+int main(int argc, char *argv[]){
+    int condDissasembler;
+    if(argc<=3){
+        condDissasembler = (argc >2 && !(strcmp(argv[2],"-d")));
+        FILE *archExe = fopen(argv[1], "rb");
 
-    inst vecInstrucciones[CANT_INSTRUCCIONES] = {
-        (inst)sys,  //00
-        (inst)jmp,  //01
-        (inst)jp,   //02
-        (inst)Jn,   //03
-        (inst)jz,   //04
-        (inst)jc,   //05
-        (inst)jv,   //06
-        (inst)jnp,  //07
-        (inst)jnn,  //08
-        (inst)jnz,  //09
-        (inst)Not,  //0A
+        inst vecInstrucciones[CANT_INSTRUCCIONES] = {
+            (inst)sys,  //00
+            (inst)jmp,  //01
+            (inst)jp,   //02
+            (inst)Jn,   //03
+            (inst)jz,   //04
+            (inst)jc,   //05
+            (inst)jv,   //06
+            (inst)jnp,  //07
+            (inst)jnn,  //08
+            (inst)jnz,  //09
+            (inst)Not,  //0A
 
-        (inst)nada, //0B
-        (inst)nada, //0C
-        (inst)nada, //0D
-        (inst)nada, //0E
-        (inst)nada, //0F
+            (inst)nada, //0B
+            (inst)nada, //0C
+            (inst)nada, //0D
+            (inst)nada, //0E
+            (inst)nada, //0F
 
-        (inst)mov,  //10
-        (inst)add,  //11
-        (inst)sub,  //12
-        (inst)mul,  //13
-        (inst)div   //14
-    };
+            (inst)mov,  //10
+            (inst)add,  //11
+            (inst)sub,  //12
+            (inst)mul,  //13
+            (inst)div   //14
+        };
 
-    uint8_t memoriaPrincipal[TAM_RAM];
-    uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
-    regSegmento segTabla[CANT_SEGMENTOS];
-    uint16_t tamCodigo;
-    uint32_t regTabla[CANT_REGISTROS];
+        uint8_t memoriaPrincipal[TAM_RAM];
+        uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
+        regSegmento segTabla[CANT_SEGMENTOS];
+        uint16_t tamCodigo;
+        uint32_t regTabla[CANT_REGISTROS];
 
-    uint8_t instruccion;
-    uint32_t direcFisicaIns, codIns, codOp1, codOp2, op1, op2;
+        uint8_t instruccion;
+        uint32_t direcFisicaIns, codIns, codOp1, codOp2, op1, op2;
 
-    if(archExe){
-        fread(cabecera, sizeof(uint8_t), 8, archExe);
+        if(archExe){
+            fread(cabecera, sizeof(uint8_t), 8, archExe);
 
-        if(validarCabecera(cabecera)){
-            tamCodigo = ((uint16_t)cabecera[6]<<8) | cabecera[7];
-            segTabla[0].tamaño = tamCodigo;           //CS
-            segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
+            if(validarCabecera(cabecera)){
+                tamCodigo = ((uint16_t)cabecera[6]<<8) | cabecera[7];
+                segTabla[0].tamaño = tamCodigo;           //CS
+                segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
 
-            iniciarTablaSegmentos(segTabla, 2);
-            iniciarRegistros(regTabla);
+                iniciarTablaSegmentos(segTabla, 2);
+                iniciarRegistros(regTabla);
 
-            fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
+                fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
 
-            while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
-                /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
-                por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
-                direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla);
-                instruccion=memoriaPrincipal[direcFisicaIns];
+                while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
+                    /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
+                    por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
+                    direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla);
+                    instruccion=memoriaPrincipal[direcFisicaIns];
 
-                //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
-                asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
-                //Actualizo IP
-                regTabla[0]+=tamInstruccion(instruccion);
-
-                //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
-
-                //Ejecuto la instruccion
-                codIns=instruccion & 0x1F;
-                //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
-                //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
-
-                if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
-                    codOp1=(regTabla[2]>>24)&0x000000FF;
-                    //codOp2=(regTabla[3]>>24)&0x000000FF;
-
-                    /*if(codOp2==2)
-                        op2=regTabla[3] & 0x00FFFFFF;
-                    else
-                        op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
-                    */
-                    ((void (*)(uint32_t, uint32_t,uint32_t[],regSegmento[],uint8_t[]))vecInstrucciones[codIns])(regTabla[2],regTabla[3],regTabla,segTabla,memoriaPrincipal);
-                    if(codOp1==3){//memoria
-                        uint32_t valorEscrito=leerMemoria(regTabla[2],regTabla,segTabla,memoriaPrincipal);
-                        //printf("Valor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
+                    //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
+                    asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
+                    if(condDissasembler){
+                        disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
                     }
+                    //Actualizo IP
+                    regTabla[0]+=tamInstruccion(instruccion);
+
+                    //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
+
+                    //Ejecuto la instruccion
+                    codIns=instruccion & 0x1F;
+                    //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
+                    //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
+
+                    if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
+                        codOp1=(regTabla[2]>>24)&0x000000FF;
+                        //codOp2=(regTabla[3]>>24)&0x000000FF;
+
+                        /*if(codOp2==2)
+                            op2=regTabla[3] & 0x00FFFFFF;
+                        else
+                            op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
+                        */
+                        ((void (*)(uint32_t, uint32_t,uint32_t[],regSegmento[],uint8_t[]))vecInstrucciones[codIns])(regTabla[2],regTabla[3],regTabla,segTabla,memoriaPrincipal);
+                        if(codOp1==3){//memoria
+                            uint32_t valorEscrito=leerMemoria(regTabla[2],regTabla,segTabla,memoriaPrincipal);
+                            //printf("Valor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
+                        }
+                    }
+
+                    //printf("\nEAX: 0x%X", regTabla[10]); //VER REGISTRO EAX
+
                 }
+            }else
+                printf("CABECERA INVALIDA!");
 
-                //printf("\nEAX: 0x%X", regTabla[10]); //VER REGISTRO EAX
-
-            }
-        }else
-            printf("CABECERA INVALIDA!");
-
-        fclose(archExe);
+            fclose(archExe);
+        }
+    }else{
+        printf("ERROR: Numero de parametros incorrecto.");
     }
-
     return 0;
 }
