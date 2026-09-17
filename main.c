@@ -4,7 +4,7 @@
 #include <string.h>
 #include "operaciones.h"
 
-#define CANT_INSTRUCCIONES 26
+#define CANT_INSTRUCCIONES 48
 #define TAM_CABECERA 8
 #define CANT_SEGMENTOS 8
 #define TAM_RAM 16384
@@ -132,28 +132,138 @@ uint32_t tamInstruccion(uint8_t instruccion){
 
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
 
-    uint8_t tip1,tip2,vecAux[100];
-    int tamInstruccion=1,i,index=1;
+    uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][8];
+    int tamInstruccion=1,i,index=1,tamAssembler=1;
+    char offset[16];
+    char assemblerReg[32][8]={
+        "IP",
+        "OPC",
+        "OP1",
+        "OP2",
+        "LAR",
+        "MAR",
+        "MBR",
+        "NADA",
+        "NADA",
+        "NADA",
+        "EAX",
+        "EBX",
+        "ECX",
+        "EDX",
+        "EEX",
+        "EFX",
+        "AC",
+        "CC",
+        "NADA",
+        "NADA",
+        "NADA",
+        "NADA",
+        "NADA",
+        "NADA",
+        "NADA",
+        "NADA",
+        "CS",
+        "DS",
+        "NADA",
+        "NADA",
+        "NADA",
+        "NADA"
+    };
+    char assemblerOp[32][8]={
+            "SYS",  //00
+            "JMP",  //01
+            "JP",   //02
+            "JN",   //03
+            "JZ",   //04
+            "JC",   //05
+            "JV",   //06
+            "JNP",  //07
+            "JNN",  //08
+            "JNZ",  //09
+            "NOT",  //0A
+
+            "NADA", //0B
+            "NADA", //0C
+            "NADA", //0D
+            "NADA", //0E
+            "STOP", //0F
+
+            "MOV",  //10
+            "ADD",  //11
+            "SUB",  //12
+            "MUL",  //13
+            "DIV",   //14
+            "CMP",  //15
+            "AND",  //16
+            "OR",   //17
+            "XOR",  //18
+            "SWAP", //19
+            "SHL",  //1A
+            "SHR",  //1B
+            "SAR",  //1C
+            "LDL",  //1D
+            "LDH",  //1E
+            "RND"   //1F
+    };
     tip1=regOP1>>24;
     tip2=regOP2>>24;
 
-    vecAux[0]=instruccion;
+    vecHexa[0]=instruccion;
+    strcpy(vecAssembler[0],assemblerOp[instruccion&0x1F]);//segun el codOp la instruccion que almacena
     for(i=0;i<tip2;i++){
-        vecAux[i+1]=(regOP2>>((tip2-1-i)*8))&0xFF; //almaceno a partir del byte 1 del regOP1
+        vecHexa[i+1]=(regOP2>>((tip2-1-i)*8))&0xFF; //almaceno a partir del byte 1 del regOP1
         tamInstruccion++;//El tamanio de la instruccion incremento un byte
     }
-
-
     for(i=0;i<tip1;i++){
-        vecAux[i+1+tip2]=(regOP1>> ((tip1-1-i)*8)) &0xFF;
+        vecHexa[i+1+tip2]=(regOP1>> ((tip1-1-i)*8)) &0xFF;
         tamInstruccion++;
     }
 
 
-    printf("\n [%04X] codIns: %02X ",direcFisica,vecAux[0]);
+    if(tip1==1)
+        strcpy(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
+    else
+        if(tip1==2)
+            sprintf(vecAssembler[1],"%d",(int16_t)(regOP1 & 0xFFFF));
+        else
+            if(tip1==3){
+                sprintf(offset,"%d",(regOP1 >>8) & 0xFFFF);
+                strcpy(vecAssembler[1],"[");
+                strcat(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
+                strcat(vecAssembler[1],"+");
+                strcat(vecAssembler[1],offset);
+                strcat(vecAssembler[1],"]");
+            }
+
+    if(tip2==1)
+        strcpy(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+    else
+        if(tip2==2)
+            sprintf(vecAssembler[2],"%d",(int16_t)(regOP2 & 0xFFFF));
+        else
+            if(tip1==3){
+                sprintf(offset,"%d",(regOP2 >>8) & 0xFFFF);
+                strcpy(vecAssembler[2],"[");
+                strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+                strcat(vecAssembler[2],"+");
+                strcat(vecAssembler[2],offset);
+                strcat(vecAssembler[2],"]");
+            }
+
+
+    printf("\n [%04X] codIns: %02X ",direcFisica,vecHexa[0]);
     for(i=1;i<tamInstruccion;++i){
-        printf(" %02X ",vecAux[i]);
+        printf(" %02X ",vecHexa[i]);
     }
+
+    tamAssembler+= tip1!=0;
+    tamAssembler+= tip2!=0;
+    printf("| %s ",vecAssembler[0]);
+
+    for(i=1;i<tamAssembler;++i){
+        printf(" %s ",vecAssembler[i]);
+    }
+    printf("\n");
 
 }
 
