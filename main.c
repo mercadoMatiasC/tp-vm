@@ -12,18 +12,6 @@
 #define VERSION 1
 #define CANT_REGISTROS 32
 
-void uint32ToBinario(uint32_t numero, char *binStr, size_t size) {
-    if (binStr == NULL || size < 33)
-        if (size > 0) binStr[0] = '\0';
-            return;
-
-    for (int i = 0; i < 32; i++)
-        binStr[i] = (numero & (1u << (31 - i))) ? '1' : '0';
-
-    binStr[32] = '\0';
-}
-
-
 //DEFINICIONES
 int validarCabecera(uint8_t[]);
 void iniciarTablaSegmentos(regSegmento[], int);
@@ -71,8 +59,6 @@ void iniciarRegistros(uint32_t registros[]){
 
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
 }
-
-
 
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns){
     uint32_t auxTipo,tip1,tip2,op1,op2;
@@ -345,16 +331,6 @@ int main(int argc, char *argv[]){
                             printf("\nValor recien escrito en memoria: %d (Hex:0x%08X)", valorEscrito, valorEscrito);
                         }
 
-                        //BORRAR
-                            uint32_t flags = (regTabla[17] >> 28) & 0x0F;
-
-                            printf("\nCC (NZCV): %u%u%u%u",
-                                (flags >> 3) & 1,  // Bit N
-                                (flags >> 2) & 1,  // Bit Z
-                                (flags >> 1) & 1,  // Bit C
-                                (flags >> 0) & 1   // Bit V
-                            );
-                        //BORRAR
                     }else{
                         if( codIns >= 0x0 && codIns <= 0xA){
 
@@ -362,6 +338,17 @@ int main(int argc, char *argv[]){
                             //if(codIns == 0xF)
                         }
                     }
+
+                    //BORRAR
+                        uint32_t flags = (regTabla[17] >> 28) & 0x0F;
+
+                        printf("\nCC (NZCV): %u%u%u%u",
+                            (flags >> 3) & 1,  // Bit N
+                            (flags >> 2) & 1,  // Bit Z
+                            (flags >> 1) & 1,  // Bit C
+                            (flags >> 0) & 1   // Bit V
+                        );
+                    //BORRAR
                 }
             }else
                 printf("\nCabezera Invalida");
