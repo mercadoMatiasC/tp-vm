@@ -123,23 +123,6 @@ uint32_t tamInstruccion(uint8_t instruccion){
     return tamAux;
 }
 
-/*uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegmento segTabla[], uint32_t regTabla[] ){
-    uint32_t codOp=(regOp>>24) & 0x000000FF;
-    uint32_t codReg=regOp & 0x0000001F;
-    uint32_t offset, direcLogica, direcFisica;
-
-    if(codOp==1) //operando de registro
-        return &regTabla[codReg];
-    else{ //operando de memoria
-        offset=(regOp>>8) & 0x0000FFFF;
-        direcLogica=offset+regTabla[codReg];
-        direcFisica=convertirDirecLogica(direcLogica, segTabla);
-
-        // Castea el puntero de uint8_t* a uint32_t* para acceder a 4 bytes continuos
-        return (uint32_t *)&memoriaPrincipal[direcFisica];
-    }
-}*/
-
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
 
     uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][8];

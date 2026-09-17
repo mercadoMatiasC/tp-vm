@@ -154,6 +154,9 @@ void jnz(void) {
 
 void Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    valor = ~valor;
+
+    escribeOperando(reg1, valor, regTabla, segTabla, memoriaPrincipal);
 }
 
 void mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
