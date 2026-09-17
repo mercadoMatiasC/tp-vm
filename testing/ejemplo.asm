@@ -1,2 +1,2 @@
-MOV [DS],0
-ADD [DS],0
+MOV [DS], 5
+SUB [DS], 10

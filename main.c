@@ -141,7 +141,6 @@ uint32_t tamInstruccion(uint8_t instruccion){
 }*/
 
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
-
     uint8_t tip1,tip2,vecAux[100];
     int tamInstruccion=1,i,index=1;
     tip1=regOP1>>24;
@@ -160,11 +159,9 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
     }
 
 
-    printf("\n [%04X] codIns: %02X ",direcFisica,vecAux[0]);
-    for(i=1;i<tamInstruccion;++i){
+    printf("\n\n[%04X] codIns: %02X ",direcFisica,vecAux[0]);
+    for(i=1;i<tamInstruccion;++i)
         printf(" %02X ",vecAux[i]);
-    }
-
 }
 
 
@@ -247,14 +244,21 @@ int main(){
                     else
                         op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
                     */
-                    ((void (*)(uint32_t, uint32_t,uint32_t[],regSegmento[],uint8_t[]))vecInstrucciones[codIns])(regTabla[2],regTabla[3],regTabla,segTabla,memoriaPrincipal);
+                    ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                     if(codOp1==3){//memoria
-                        uint32_t valorEscrito=leerMemoria(regTabla[2],regTabla,segTabla,memoriaPrincipal);
-                        printf("\nValor recien escrito en memoria: %d (Hex:0x%08X) \n",valorEscrito,valorEscrito);
+                        uint32_t valorEscrito = leerMemoria(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                        printf("\nValor recien escrito en memoria: %d (Hex:0x%08X)", valorEscrito, valorEscrito);
                     }
 
                     //BORRAR
-                        printf("\nCC: %08X", regTabla[17]);
+                        uint32_t flags = (regTabla[17] >> 28) & 0x0F;
+
+                        printf("\nCC (NZCV): %u%u%u%u", 
+                            (flags >> 3) & 1,  // Bit N
+                            (flags >> 2) & 1,  // Bit Z
+                            (flags >> 1) & 1,  // Bit C
+                            (flags >> 0) & 1   // Bit V
+                        );
                     //BORRAR
 
                 }
