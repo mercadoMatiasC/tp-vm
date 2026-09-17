@@ -1,0 +1,46 @@
+============ TEST ADD ============
+// EXPECTED NZCV: 0100
+MOV [DS], 0
+ADD [DS], 0
+
+// EXPECTED NZCV: 1000
+MOV [DS], -100
+ADD [DS], 50
+
+// EXPECTED NZCV: 0110
+MOV [DS], -1
+ADD [DS], 1
+
+// EXPECTED NZCV: 0000
+MOV [DS], 32767
+ADD [DS], 32767
+
+// EXPECTED NZCV: 1010
+MOV [DS], -32768
+ADD [DS], -32768
+
+// TEST Positive overflow (V=1)
+// EXPECTED OUTPUT (NZCV): 1001
+MOV [DS], 32767
+ADD [DS], 32767
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+ADD [DS], [DS]
+
+====== TEST SUB =========
+// EXPECTED OUTPUT (NZCV): 1010 | Borrow (C=1) y resultado negativo (N=1)
+MOV [DS], 5
+SUB [DS], 10
