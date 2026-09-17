@@ -340,7 +340,8 @@ int main(int argc, char *argv[]){
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                    disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
+                    if (condDissasembler)
+                        disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
                     //Actualizo IP
                     regTabla[0]+=tamInstruccion(instruccion);
 
@@ -352,16 +353,11 @@ int main(int argc, char *argv[]){
                     //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
 
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
-                        codOp1=(regTabla[2]>>24)&0x000000FF;
-                        //codOp2=(regTabla[3]>>24)&0x000000FF;
+                        codOp1=(regTabla[2]>>24)&0x000000FF; //BORRAR
 
-                        /*if(codOp2==2)
-                            op2=regTabla[3] & 0x00FFFFFF;
-                        else
-                            op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
-                        */
+
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
-                        if(codOp1==3){//memoria
+                        if(codOp1==3){//BORRAR, uso para dev
                             uint32_t valorEscrito = leerMemoria(regTabla[2], regTabla, segTabla, memoriaPrincipal);
                             printf("\nValor recien escrito en memoria: %d (Hex:0x%08X)", valorEscrito, valorEscrito);
                         }
@@ -376,6 +372,12 @@ int main(int argc, char *argv[]){
                                 (flags >> 0) & 1   // Bit V
                             );
                         //BORRAR
+                    }else{
+                        if( codIns >= 0x0 && codIns <= 0xA){
+
+                        }else{
+                            //if(codIns == 0xF)
+                        }
                     }
                 }
             }else

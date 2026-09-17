@@ -45,11 +45,11 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
     if (codOp == 1) {
         codReg = regOp & 0x0000001F;
         return regTabla[codReg];
-    } else 
+    } else
         if (codOp == 2)
             // Al castear primero a int16_t y luego a int32_t/uint32_t, 0xFFFF pasa a ser 0xFFFFFFFF (-1)
-            return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF); 
-        else 
+            return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF);
+        else
             return leerMemoria(regOp, regTabla, segTabla, memoriaPrincipal);
 }
 
@@ -152,8 +152,8 @@ void jnz(void) {
     printf("JNZ \n");
 }
 
-void Not(void) {
-    printf("NOT \n");
+void Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
 }
 
 void mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
