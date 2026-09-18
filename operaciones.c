@@ -153,8 +153,8 @@ void jnz(void) {
 }
 
 void Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    uint32_t valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    int res = ~valor;
+    int32_t valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    int32_t res = ~valor;
     actualizarCC_General(valor, 0,regTabla, res, 3);
     escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
 }
