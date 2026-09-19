@@ -307,7 +307,19 @@ int main(int argc, char *argv[]){
             (inst)add,  //11
             (inst)sub,  //12
             (inst)mul,  //13
-            (inst)div   //14
+            (inst)div,   //14
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)ldl,
+            (inst)ldh,
+            (inst)nada
+
         };
 
         uint8_t memoriaPrincipal[TAM_RAM];
@@ -362,7 +374,12 @@ int main(int argc, char *argv[]){
                         */
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                         if(codOp1==3){//memoria
-                            uint32_t valorEscrito = leerMemoria(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                            uint32_t regOp = regTabla[2]; // O el regOp que corresponda
+                            uint32_t codReg = regOp & 0x0000001F;
+                            uint32_t offset = (regOp >> 8) & 0x0000FFFF;
+                            uint32_t direcLogica = offset + regTabla[codReg];
+
+                            uint32_t valorEscrito = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 4);
                             printf("\nValor recien escrito en memoria: %d (Hex:0x%08X)", valorEscrito, valorEscrito);
                         }
 
@@ -377,6 +394,10 @@ int main(int argc, char *argv[]){
                             );
                         //BORRAR
                     }
+                    else
+                        if(codIns>=0x00 && codIns<=0x0A){
+                             ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                        }
                 }
             }else
                 printf("\nCabezera Invalida");

@@ -1,12 +1,13 @@
-<<<<<<< HEAD
-MOV [DS], 5
-SUB [DS], 10
-=======
-MOV [DS+3],2
-ADD [DS+3],3
-MOV EAX,7
-MOV [DS],EAX
-MOV [DS+8],[DS+3]
-ADD [DS+3],-1
+MOV EAX, 0x08
+MOV EDX, DS
+ADD EDX, 11
+LDL ECX, 4
+LDH ECX, 1
+SYS 0x1
+MOV EDX, DS
+ADD EDX, 11
+LDH ECX, 1
+LDL ECX, 4
+MOV EAX, 0x1F
+SYS 0x2
 STOP
->>>>>>> origin/main
