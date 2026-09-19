@@ -260,40 +260,84 @@ void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
 
 }
 
-void jmp(void) {
-    printf("JPM \n");
+void jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    // 1. Leemos el offset almacenado en reg1, el offset es un operando inmediato
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+
+    // 4. Actualizamos IP con la dirección Lógica
+    regTabla[0] = direcLogica;
 }
 
-void jp(void) {
-    printf("JP \n");
+void jp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+
+    uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
+    uint8_t bitCero=(regTabla[17]>>30) & 0x1;
+
+    if(bitNegativo==0 && bitCero==0)
+        regTabla[0]=direcLogica; 
 }
 
-void Jn(void) {
-    printf("JN \n");
+void Jn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
+    if(bitNegativo)
+        regTabla[0]=direcLogica; 
+
 }
 
-void jz(void) {
-    printf("JZ \n");
+void jz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitCero=(regTabla[17]>>30) & 0x1;
+    if(bitCero)
+        regTabla[0]=direcLogica;
 }
 
-void jc(void) {
-    printf("JC \n");
+void jc(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitAcarreo=(regTabla[17]>>29) & 0x1;
+    if(bitAcarreo)
+        regTabla[0]=direcLogica;
 }
 
-void jv(void) {
-    printf("JV \n");
+void jv(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitDesborda=(regTabla[17]>>28) & 0x1;
+    if(bitDesborda)
+        regTabla[0]=direcLogica;
 }
 
-void jnp(void) {
-    printf("JNP \n");
+void jnp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
+    uint8_t bitCero=(regTabla[17]>>30) & 0x1;
+    if(bitNegativo || bitCero)
+        regTabla[0]=direcLogica;
+
 }
 
-void jnn(void) {
-    printf("JNN \n");
+void jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
+    uint8_t bitCero=(regTabla[17]>>30) & 0x1;
+    if(bitNegativo==0 || bitCero)
+        regTabla[0]=direcLogica;
 }
 
-void jnz(void) {
-    printf("JNZ \n");
+void jnz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
+    uint8_t bitCero=(regTabla[17]>>30) & 0x1;
+    if(bitCero==0)
+        regTabla[0]=direcLogica;
 }
 
 void Not(void) {

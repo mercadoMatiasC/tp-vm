@@ -353,25 +353,18 @@ int main(int argc, char *argv[]){
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
                     disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
-                    //Actualizo IP
+                    
+                    //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
 
                     //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
 
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
-                    //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
-                    //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
-
+            
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                         codOp1=(regTabla[2]>>24)&0x000000FF;
-                        //codOp2=(regTabla[3]>>24)&0x000000FF;
-
-                        /*if(codOp2==2)
-                            op2=regTabla[3] & 0x00FFFFFF;
-                        else
-                            op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
-                        */
+                        
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                         if(codOp1==3){//memoria
                             uint32_t regOp = regTabla[2]; // O el regOp que corresponda
