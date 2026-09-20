@@ -251,7 +251,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         if(tip2==2)
             sprintf(vecAssembler[2],"%d",(int16_t)(regOP2 & 0xFFFF));
         else
-            if(tip1==3){
+            if(tip2==3){
                 sprintf(offset,"%d",(regOP2 >>8) & 0xFFFF);
                 strcpy(vecAssembler[2],"[");
                 strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
@@ -301,13 +301,25 @@ int main(int argc, char *argv[]){
             (inst)nada, //0C
             (inst)nada, //0D
             (inst)nada, //0E
-            (inst)nada, //0F
+            (inst)stop, //0F
 
             (inst)mov,  //10
             (inst)add,  //11
             (inst)sub,  //12
             (inst)mul,  //13
-            (inst)div   //14
+            (inst)Div,   //14
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)nada,
+            (inst)shl,
+            (inst)shr,
+            (inst)sar,
+            (inst)ldl,
+            (inst)ldh,
+            (inst)nada
+
         };
 
         uint8_t memoriaPrincipal[TAM_RAM];
@@ -340,29 +352,25 @@ int main(int argc, char *argv[]){
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                    disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
-                    //Actualizo IP
+                   
+                    
+                    //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
-
-                    //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
 
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
-                    //Aclaracion los Op1 y Op2 son los valores con los que realizaremos la instruccion
-                    //mas no significa que coincidan con lo que guardan los registros OP1 y OP2
-
+            
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                         codOp1=(regTabla[2]>>24)&0x000000FF;
-                        //codOp2=(regTabla[3]>>24)&0x000000FF;
-
-                        /*if(codOp2==2)
-                            op2=regTabla[3] & 0x00FFFFFF;
-                        else
-                            op2=*(valorOpGenerico(regTabla[3], memoriaPrincipal, segTabla, regTabla));
-                        */
+                        
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                         if(codOp1==3){//memoria
-                            uint32_t valorEscrito = leerMemoria(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                            uint32_t regOp = regTabla[2]; // O el regOp que corresponda
+                            uint32_t codReg = regOp & 0x0000001F;
+                            uint32_t offset = (regOp >> 8) & 0x0000FFFF;
+                            uint32_t direcLogica = offset + regTabla[codReg];
+
+                            uint32_t valorEscrito = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 4);
                             printf("\nValor recien escrito en memoria: %d (Hex:0x%08X)", valorEscrito, valorEscrito);
                         }
 
@@ -377,6 +385,20 @@ int main(int argc, char *argv[]){
                             );
                         //BORRAR
                     }
+                    else
+                        if(codIns>=0x00 && codIns<=0x0A){
+                             ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                        }
+                        else
+                            if(codIns==0x0F)
+                                 ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
+                            else{
+                                printf("Instruccion invalida \n");
+                                exit(1);//termina de forma abrupta la ejecucion del programa
+                            } 
+                    disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);   
+                        
+                                
                 }
             }else
                 printf("\nCabezera Invalida");
