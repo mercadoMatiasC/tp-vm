@@ -12,18 +12,6 @@
 #define VERSION 1
 #define CANT_REGISTROS 32
 
-void uint32ToBinario(uint32_t numero, char *binStr, size_t size) {
-    if (binStr == NULL || size < 33)
-        if (size > 0) binStr[0] = '\0';
-            return;
-
-    for (int i = 0; i < 32; i++)
-        binStr[i] = (numero & (1u << (31 - i))) ? '1' : '0';
-
-    binStr[32] = '\0';
-}
-
-
 //DEFINICIONES
 int validarCabecera(uint8_t[]);
 void iniciarTablaSegmentos(regSegmento[], int);
@@ -32,6 +20,9 @@ void iniciarRegistros(uint32_t[]);
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns);
 uint32_t calcularTamInstruccion(uint8_t instruccion);
 uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegmento segTabla[], uint32_t regTabla[] );
+void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2);
+void mostrarCC(uint32_t regTabla[]);
+
 
 
 //IMPLEMENTACIONES
@@ -71,7 +62,6 @@ void iniciarRegistros(uint32_t registros[]){
 
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
 }
-
 
 
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns){
@@ -141,7 +131,6 @@ uint32_t tamInstruccion(uint8_t instruccion){
 }*/
 
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
-
     uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][8];
     int tamInstruccion=1,i,index=1,tamAssembler=1;
     char offset[16];
@@ -229,7 +218,6 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         tamInstruccion++;
     }
 
-
     if(tip1==1)
         strcpy(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
     else
@@ -261,7 +249,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             }
 
 
-    printf("\n [%04X] codIns: %02X ",direcFisica,vecHexa[0]);
+    printf("\n[%04X] codIns: %02X ",direcFisica,vecHexa[0]);
     for(i=1;i<tamInstruccion;++i){
         printf(" %02X ",vecHexa[i]);
     }
@@ -275,6 +263,17 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
     }
     printf("\n");
 
+}
+
+void mostrarCC(uint32_t regTabla[]){
+    uint32_t flags = (regTabla[17] >> 28) & 0x0F;
+
+    printf("\nCC (NZCV): %u%u%u%u",
+        (flags >> 3) & 1,  // Bit N
+        (flags >> 2) & 1,  // Bit Z
+        (flags >> 1) & 1,  // Bit C
+        (flags >> 0) & 1   // Bit V
+    );
 }
 
 
@@ -307,7 +306,7 @@ int main(int argc, char *argv[]){
             (inst)add,  //11
             (inst)sub,  //12
             (inst)mul,  //13
-            (inst)Div,   //14
+            (inst)Div,  //14
             (inst)nada,
             (inst)nada,
             (inst)nada,
@@ -373,40 +372,33 @@ int main(int argc, char *argv[]){
                             uint32_t valorEscrito = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 4);
                             printf("\nValor recien escrito en memoria: %d (Hex:0x%08X)", valorEscrito, valorEscrito);
                         }
-
-                        //BORRAR
-                            uint32_t flags = (regTabla[17] >> 28) & 0x0F;
-
-                            printf("\nCC (NZCV): %u%u%u%u",
-                                (flags >> 3) & 1,  // Bit N
-                                (flags >> 2) & 1,  // Bit Z
-                                (flags >> 1) & 1,  // Bit C
-                                (flags >> 0) & 1   // Bit V
-                            );
-                        //BORRAR
-                    }
-                    else
-                        if(codIns>=0x00 && codIns<=0x0A){
-                             ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
-                        }
+                    }else
+                        if(codIns>=0x00 && codIns<=0x0A)
+                            ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
                         else
                             if(codIns==0x0F)
                                  ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
                             else{
-                                printf("Instruccion invalida \n");
-                                exit(1);//termina de forma abrupta la ejecucion del programa
+                                printf("\nERROR: Instruccion invalida");
+                                exit(1); //termina de forma abrupta la ejecucion del programa
                             } 
-                    disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);   
-                        
-                                
+
+                    //DEBUG 
+                    disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);   
+                    
+                    printf("ECX: %d\n", (int32_t)regTabla[12]);
+                    //printf("\nAC: %u", regTabla[16]);
+                    mostrarCC(regTabla);
+                    
+                    printf("\n\n-------------------------------------------------------\n");
+                    //DEBUG
                 }
             }else
-                printf("\nCabezera Invalida");
+                printf("\nERROR: Cabecera invalida");
         }else
-            printf("\nArchivo Invalido");
+            printf("\nERROR: Archivo invalido");
         fclose(archExe);
-    }else{
-        printf("Cantidad de argumentos invalidos");
-    }
+    }else
+        printf("\nERROR: Cantidad de argumentos invalidos");
     return 0;
 }

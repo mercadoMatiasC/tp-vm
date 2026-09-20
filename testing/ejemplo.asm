@@ -1,3 +1,3 @@
-MOV ECX,[EAX]
+MOV ECX, 22
+DIV ECX, 7
 STOP
-
