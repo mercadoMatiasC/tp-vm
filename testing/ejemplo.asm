@@ -1,3 +1,3 @@
-MOV [7], 20
-SAR [7], 2
+MOV EAX, -500
+MOV ECX,[EAX+DS]
 

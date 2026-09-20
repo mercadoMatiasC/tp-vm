@@ -307,7 +307,7 @@ int main(int argc, char *argv[]){
             (inst)add,  //11
             (inst)sub,  //12
             (inst)mul,  //13
-            (inst)div,   //14
+            (inst)Div,   //14
             (inst)nada,
             (inst)nada,
             (inst)nada,
@@ -352,12 +352,10 @@ int main(int argc, char *argv[]){
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                    disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);
+                   
                     
                     //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
-
-                    //printf("\n[%04X] Instruccion:%X | op1: %08X | op2: %08X", direcFisicaIns, instruccion, regTabla[3], regTabla[2]);
 
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
@@ -391,6 +389,16 @@ int main(int argc, char *argv[]){
                         if(codIns>=0x00 && codIns<=0x0A){
                              ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
                         }
+                        else
+                            if(codIns==0x0F)
+                                 ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
+                            else{
+                                printf("Instruccion invalida \n");
+                                exit(1);//termina de forma abrupta la ejecucion del programa
+                            } 
+                    disassembler(instruccion,direcFisicaIns,regTabla[2],regTabla[3]);   
+                        
+                                
                 }
             }else
                 printf("\nCabezera Invalida");
