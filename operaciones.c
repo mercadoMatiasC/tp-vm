@@ -398,3 +398,36 @@ void ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     uint32_t resultado = (valorOrigen << 16) | (valorDestino & 0x0000FFFF);
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 }
+void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint64_t resultado = (uint64_t)valor1<<valor2; 
+
+    escribeOperando(reg1, (uint32_t)resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
+
+    //Invocacion para actualizar CC
+
+}
+void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t resultado = valor1>>valor2; 
+
+    escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
+
+    //Invocacion para actualizar CC
+
+}
+void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    int32_t resultado = (int32_t)valor1>>valor2; //casteamos ambos a int32 para que se propague el signo
+
+    escribeOperando(reg1, (uint32_t)resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
+
+    //Invocacion para actualizar CC
+
+}

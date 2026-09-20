@@ -314,8 +314,8 @@ int main(int argc, char *argv[]){
             (inst)nada,
             (inst)nada,
             (inst)shl,
-            (inst)nada,
-            (inst)nada,
+            (inst)shr,
+            (inst)sar,
             (inst)ldl,
             (inst)ldh,
             (inst)nada
