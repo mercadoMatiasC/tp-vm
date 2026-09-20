@@ -45,4 +45,4 @@ void ldl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 void ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 void rnd(void);
 
-void stop(void);
+void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);

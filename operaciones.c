@@ -445,3 +445,6 @@ void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     //Invocacion para actualizar CC
 
 }
+void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    regTabla[0]=0xFFFFFFFF;
+}

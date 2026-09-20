@@ -301,7 +301,7 @@ int main(int argc, char *argv[]){
             (inst)nada, //0C
             (inst)nada, //0D
             (inst)nada, //0E
-            (inst)nada, //0F
+            (inst)stop, //0F
 
             (inst)mov,  //10
             (inst)add,  //11
