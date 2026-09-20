@@ -251,7 +251,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         if(tip2==2)
             sprintf(vecAssembler[2],"%d",(int16_t)(regOP2 & 0xFFFF));
         else
-            if(tip1==3){
+            if(tip2==3){
                 sprintf(offset,"%d",(regOP2 >>8) & 0xFFFF);
                 strcpy(vecAssembler[2],"[");
                 strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]){
             (inst)nada,
             (inst)nada,
             (inst)nada,
-            (inst)nada,
+            (inst)shl,
             (inst)nada,
             (inst)nada,
             (inst)ldl,
