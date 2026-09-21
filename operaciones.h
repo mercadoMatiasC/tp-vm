@@ -43,6 +43,6 @@ void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 void ldl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 void ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
-void rnd(void);
+void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 
 void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);

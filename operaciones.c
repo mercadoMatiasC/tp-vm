@@ -6,18 +6,18 @@
 
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
-    
+
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
-    
+
     if(codSeg<0 || codSeg>7){
         printf("Fallo de segmento");
         exit(1);
     }
-        
+
     uint32_t direcBase=segTabla[codSeg].base; //Obtengo de la tabla de descriptores la direc base
     int32_t direcFisica=(int32_t)direcBase+offset;//Necesito castearlo a negativo por si entra un offset negativo, para asi poder valir la direcFisica
                                                     //Si trato a direcFisica y a direcBase como uint, el offset negativo me lo promocionan a positivo y dejaria de ser un valor invalido
-   
+
     if((int32_t)direcBase>direcFisica){//falta validar los limites que consultare el jueves
         printf("Fallo de segmento");
         exit(1);
@@ -30,9 +30,9 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
     int i;
     uint32_t resultado=0;
 
-   
+
     regTabla[4]=direcLogica;//modifico el LAR
-    
+
 
     direcFisica=convertirDirecLogica(direcLogica, segTabla);
     regTabla[5]=(uint32_t)nBytes<<16 | direcFisica;//modifico el MAR
@@ -54,7 +54,7 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
 }
 
 void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[],uint8_t nBytes){
-  
+
     uint32_t direcFisica;
     int i;
 
@@ -73,10 +73,10 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
 
     if (codOp == 1) {
         return regTabla[codReg];
-    } else 
+    } else
         if (codOp == 2)
             // Al castear primero a int16_t y luego a int32_t/uint32_t, 0xFFFF pasa a ser 0xFFFFFFFF (-1)
-            return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF); 
+            return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF);
         else {
             uint32_t offset = (regOp >> 8) & 0x0000FFFF;
             uint32_t direcLogica = offset + regTabla[codReg];
@@ -138,7 +138,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
 
         if (C) //COMO HUBO CARRY, EL 0 DEL COCIENTE NO ES UN 0 REAL, SINO UNA APROXIMACION POR TRUNCAMIENTO
             Z = 0;
-        
+
         break;
     }
 
@@ -204,19 +204,19 @@ int32_t devuelveNumero(char *cadBinaria, int cantBits) {
 void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     int i;
     uint32_t direcLogica, valor;
-    
-    // Extraemos tamaño (16 bits superiores) y cantidad (16 bits inferiores) de ECX (regTabla[12]) 
-    uint16_t cantBytes = (regTabla[12] >> 16) & 0xFFFF; 
-    uint8_t cantCeldas = regTabla[12] & 0xFFFF;   
-    char cadBinario[33]; 
+
+    // Extraemos tamaño (16 bits superiores) y cantidad (16 bits inferiores) de ECX (regTabla[12])
+    uint16_t cantBytes = (regTabla[12] >> 16) & 0xFFFF;
+    uint8_t cantCeldas = regTabla[12] & 0xFFFF;
+    char cadBinario[33];
     int32_t dato;
-         
+
 
     valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     if (valor == 2) { // WRITE
         for (i = 0; i < cantCeldas; i++) {
             direcLogica = regTabla[13] + cantBytes * i; //EDX apuntando a la direc inicial + corrimiento
-            
+
             // Leemos el valor de la memoria usando la dirección lógica
             dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
 
@@ -259,7 +259,7 @@ void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
                 printf("[%04X]: ", direcFisica);
                 if(regTabla[10]==0x10){
                     scanf(" %s",cadBinario);
-                    dato=devuelveNumero(cadBinario,8*cantBytes);           
+                    dato=devuelveNumero(cadBinario,8*cantBytes);
                 }
                 else
                     if(regTabla[10]==0x08)
@@ -273,7 +273,7 @@ void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
                             else
                                 if(regTabla[10]==0x01)
                                     scanf(" %d",&dato);
-               
+
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
             }
         }
@@ -297,7 +297,7 @@ void jp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memo
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
 
     if(bitNegativo==0 && bitCero==0)
-        regTabla[0]=direcLogica; 
+        regTabla[0]=direcLogica;
 }
 
 void Jn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
@@ -305,7 +305,7 @@ void Jn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memo
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
     if(bitNegativo)
-        regTabla[0]=direcLogica; 
+        regTabla[0]=direcLogica;
 
 }
 
@@ -454,7 +454,7 @@ void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    uint64_t resultado = (uint64_t)valor1<<valor2; 
+    uint64_t resultado = (uint64_t)valor1<<valor2;
 
     escribeOperando(reg1, (uint32_t)resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
 
@@ -466,7 +466,7 @@ void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    uint32_t resultado = valor1>>valor2; 
+    uint32_t resultado = valor1>>valor2;
 
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
 
@@ -488,4 +488,12 @@ void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 
 void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     regTabla[0]=0xFFFFFFFF;
+}
+
+void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla,segTabla,memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+    uint32_t rndVal = rand() % (valor2 + 1) ;
+    //que pasa si valor2 es negativo???
+    escribeOperando(reg1, rndVal,regTabla, segTabla, memoriaPrincipal);
 }
