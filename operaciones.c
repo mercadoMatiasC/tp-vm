@@ -491,9 +491,30 @@ void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[
 }
 
 void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla,segTabla,memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
     uint32_t rndVal = rand() % (valor2 + 1) ;
-    //que pasa si valor2 es negativo???
-    escribeOperando(reg1, rndVal,regTabla, segTabla, memoriaPrincipal);
+    if((valor2 >> 31)==1){
+        escribeOperando(reg1, rndVal,regTabla, segTabla, memoriaPrincipal);
+    }else {
+        printf("ERROR: Argumento invalido");
+        exit(1);
+    }
+}
+
+void Or(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t res = valor1 | valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
+}
+
+void Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t res = valor1 ^ valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
 }

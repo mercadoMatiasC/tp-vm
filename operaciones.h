@@ -35,8 +35,8 @@ void mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 void Div(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 void cmp(void);
 void And(void);
-void  Or(void);
-void Xor(void);
+void  Or(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
+void Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 void swap(void);
 void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
 void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
