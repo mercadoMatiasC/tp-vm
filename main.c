@@ -292,15 +292,15 @@ int main(int argc, char *argv[]){
             (inst)Div,  //14
             (inst)nada,
             (inst)nada,
-            (inst)nada,
-            (inst)nada,
+            (inst)Or,
+            (inst)Xor,
             (inst)nada,
             (inst)shl,
             (inst)shr,
             (inst)sar,
             (inst)ldl,
             (inst)ldh,
-            (inst)nada
+            (inst)rnd
 
         };
 
