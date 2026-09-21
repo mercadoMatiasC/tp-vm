@@ -131,10 +131,15 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
             C = V = ((uint64_t)resultado > 0xFFFFFFFFULL);
             break;
 
-        case 6: //DIV
-            C = 0;
-            V = 0;
-            break;
+        case 6: // DIV
+        //SI EL RESULTADO DA MENOR A 1 SE ACTIVA EL CARRY SEGUN VMX26
+        C = ((uint32_t)op1 < (uint32_t)op2);
+        V = 0;
+
+        if (C) //COMO HUBO CARRY, EL 0 DEL COCIENTE NO ES UN 0 REAL, SINO UNA APROXIMACION POR TRUNCAMIENTO
+            Z = 0;
+        
+        break;
     }
 
     //ACTUALIZAMOS LOS BITS EN EL CC
@@ -144,9 +149,8 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
 void nada(){
     printf("nada\n");
 }
-void devuelveBinario(int32_t num,char* cad,int nBits){
-    
 
+void devuelveBinario(int32_t num,char* cad,int nBits){
     int idx = 0;
     int encontro_primer_uno = 0;
 
@@ -172,6 +176,7 @@ void devuelveBinario(int32_t num,char* cad,int nBits){
         cad[idx] = '\0'; // Cierre de la cadena
     }
 }
+
 int32_t devuelveNumero(char *cadBinaria, int cantBits) {
     int32_t resultado = 0;
 
@@ -195,6 +200,7 @@ int32_t devuelveNumero(char *cadBinaria, int cantBits) {
 
     return resultado;
 }
+
 void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     int i;
     uint32_t direcLogica, valor;
@@ -354,12 +360,18 @@ void jnz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
         regTabla[0]=direcLogica;
 }
 
-void Not(void) {
-    printf("NOT \n");
+void Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t resultado = ~valor; //NO EXISTE OVERFLOW/CARRY EN OPERACIONES LOGICAS
+
+    escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
+
+    actualizarCC_General(valor, 0, regTabla, resultado, 3);
 }
 
 void mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor2=leerOperando(reg2,regTabla,segTabla,memoriaPrincipal);
+    uint32_t valor2=leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
     escribeOperando(reg1,valor2,regTabla,segTabla,memoriaPrincipal);
     actualizarCC_General(reg1, valor2, regTabla, valor2, 3);
@@ -387,13 +399,37 @@ void sub(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
 
-void mul(void) { //FALTA ACTUALIZAR CC
-   printf("nada");
+void mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint64_t resultado = (uint64_t)valor1 * (uint64_t)valor2; //HAGO LA MULTIPLICACION SIN SIGNO PARA NO PERDER BITS DE OVERFLOW
+
+    escribeOperando(reg1, (uint32_t)resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
+
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 5); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
 
-void Div(void) { //FALTA ACTUALIZAR CC Y AC
-    printf("nada");
+void Div(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    //EVITAR DIVISION POR 0
+    if (valor2 == 0) {
+        printf("\nERROR: Division por cero.");
+        //ACA ALGUN EFECTO SECUNDARIO?
+    }else{
+        uint32_t cociente = valor1 / valor2; //NUNCA HABRÁ OVERFLOW/CARRY EN DIVISION ENTERA
+        uint32_t resto    = valor1 % valor2;
+
+        escribeOperando(reg1, cociente, regTabla, segTabla, memoriaPrincipal);
+
+        //ACTUALIZAR CC y AC
+        actualizarCC_General(valor1, valor2, regTabla, cociente, 6);
+        regTabla[16] = resto;
+    }
 }
+
 void ldl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valorDestino = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valorOrigen  = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
@@ -404,6 +440,7 @@ void ldl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 
 }
+
 void ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valorDestino = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valorOrigen  = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
@@ -412,6 +449,7 @@ void ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     uint32_t resultado = (valorOrigen << 16) | (valorDestino & 0x0000FFFF);
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 }
+
 void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
@@ -423,6 +461,7 @@ void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     //Invocacion para actualizar CC
 
 }
+
 void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
@@ -434,6 +473,7 @@ void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     //Invocacion para actualizar CC
 
 }
+
 void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
@@ -445,6 +485,7 @@ void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     //Invocacion para actualizar CC
 
 }
+
 void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     regTabla[0]=0xFFFFFFFF;
 }
