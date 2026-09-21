@@ -491,9 +491,9 @@ void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[
 }
 
 void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+    int32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
     uint32_t rndVal = rand() % (valor2 + 1) ;
-    if((valor2 >> 31)==1){
+    if(valor2>0){
         escribeOperando(reg1, rndVal,regTabla, segTabla, memoriaPrincipal);
     }else {
         printf("ERROR: Argumento invalido");
