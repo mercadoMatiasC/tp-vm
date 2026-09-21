@@ -111,6 +111,8 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
     uint32_t b2 = ((uint32_t)op2 >> 31);
     uint32_t bR = (res32 >> 31);
 
+    uint32_t shift = (uint32_t)op2; //POSICIONES A DESPLAZAR EN CASO SHIFT
+
     switch (tipo) {
         case 1: //ADD
             C = ((uint64_t)resultado > 0xFFFFFFFFULL);
@@ -131,15 +133,29 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
             C = V = ((uint64_t)resultado > 0xFFFFFFFFULL);
             break;
 
-        case 6: // DIV
-        //SI EL RESULTADO DA MENOR A 1 SE ACTIVA EL CARRY SEGUN VMX26
-        C = ((uint32_t)op1 < (uint32_t)op2);
-        V = 0;
+        case 6: //DIV
+            C = 0;
+            V = 0;
+            break;
 
-        if (C) //COMO HUBO CARRY, EL 0 DEL COCIENTE NO ES UN 0 REAL, SINO UNA APROXIMACION POR TRUNCAMIENTO
-            Z = 0;
+        case 7: //SHL
+            if ((shift>0) && (shift <= 32))
+                C = (((uint32_t)op1 >> (32 - shift)) & 1); //C DEPENDE DEL ULTIMO BIT QUE QUEDÓ AFUERA
+            else
+                C = 0;
 
-        break;
+            V = 0;
+            break;
+
+        case 8: //SHR
+        case 9: //SAR
+            if ((shift>0) && (shift <= 32)) 
+                C = (((uint32_t)op1 >> (shift - 1)) & 1); //C DEPENDE DEL ULTIMO BIT QUE QUEDÓ AFUERA
+            else
+                C = 0;
+
+            V = 0;
+            break;
     }
 
     //ACTUALIZAMOS LOS BITS EN EL CC
@@ -458,8 +474,8 @@ void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 
     escribeOperando(reg1, (uint32_t)resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
 
-    //Invocacion para actualizar CC
-
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 7);
 }
 
 void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
@@ -470,8 +486,8 @@ void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
 
-    //Invocacion para actualizar CC
-
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 8);
 }
 
 void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
@@ -482,8 +498,8 @@ void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 
     escribeOperando(reg1, (uint32_t)resultado, regTabla, segTabla, memoriaPrincipal); //SOLO PASO LOS BITS QUE PUEDE ENTENDER LA VM (sin carry ni overflow)
 
-    //Invocacion para actualizar CC
-
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 9);
 }
 
 void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
@@ -492,10 +508,11 @@ void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[
 
 void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     int32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
-    uint32_t rndVal = rand() % (valor2 + 1) ;
-    if(valor2>0){
+    uint32_t rndVal = rand() % (valor2 + 1);
+
+    if(valor2>0)
         escribeOperando(reg1, rndVal,regTabla, segTabla, memoriaPrincipal);
-    }else {
+    else {
         printf("ERROR: Argumento invalido");
         exit(1);
     }
