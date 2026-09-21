@@ -113,23 +113,6 @@ uint32_t tamInstruccion(uint8_t instruccion){
     return tamAux;
 }
 
-/*uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegmento segTabla[], uint32_t regTabla[] ){
-    uint32_t codOp=(regOp>>24) & 0x000000FF;
-    uint32_t codReg=regOp & 0x0000001F;
-    uint32_t offset, direcLogica, direcFisica;
-
-    if(codOp==1) //operando de registro
-        return &regTabla[codReg];
-    else{ //operando de memoria
-        offset=(regOp>>8) & 0x0000FFFF;
-        direcLogica=offset+regTabla[codReg];
-        direcFisica=convertirDirecLogica(direcLogica, segTabla);
-
-        // Castea el puntero de uint8_t* a uint32_t* para acceder a 4 bytes continuos
-        return (uint32_t *)&memoriaPrincipal[direcFisica];
-    }
-}*/
-
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
     uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][8];
     int tamInstruccion=1,i,index=1,tamAssembler=1;
@@ -351,17 +334,17 @@ int main(int argc, char *argv[]){
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                   
-                    
+
+
                     //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
 
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
-            
+
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                         codOp1=(regTabla[2]>>24)&0x000000FF;
-                        
+
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                         if(codOp1==3){//memoria
                             uint32_t regOp = regTabla[2]; // O el regOp que corresponda
@@ -381,15 +364,15 @@ int main(int argc, char *argv[]){
                             else{
                                 printf("\nERROR: Instruccion invalida");
                                 exit(1); //termina de forma abrupta la ejecucion del programa
-                            } 
+                            }
 
-                    //DEBUG 
-                    disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);   
-                    
+                    //DEBUG
+                    disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+
                     printf("ECX: %d\n", (int32_t)regTabla[12]);
                     //printf("\nAC: %u", regTabla[16]);
                     mostrarCC(regTabla);
-                    
+
                     printf("\n\n-------------------------------------------------------\n");
                     //DEBUG
                 }
