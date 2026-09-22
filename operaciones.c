@@ -148,7 +148,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
 
         case 8: //SHR
         case 9: //SAR
-            if ((shift>0) && (shift <= 32)) 
+            if ((shift>0) && (shift <= 32))
                 C = (((uint32_t)op1 >> (shift - 1)) & 1); //C DEPENDE DEL ULTIMO BIT QUE QUEDÓ AFUERA
             else
                 C = 0;
@@ -565,4 +565,39 @@ void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
         printf("ERROR: Argumento invalido");
         exit(1);
     }
+}
+
+void Or(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t res = valor1 | valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
+}
+
+void Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t res = valor1 ^ valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
+}
+
+void And(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t res = valor1 & valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
+}
+
+void swap(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    escribeOperando(reg1, valor2, regTabla, segTabla, memoriaPrincipal);
+    escribeOperando(reg2, valor1, regTabla, segTabla, memoriaPrincipal);
 }
