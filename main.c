@@ -245,7 +245,6 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         printf(" %s ",vecAssembler[i]);
     }
     printf("\n");
-
 }
 
 void mostrarCC(uint32_t regTabla[]){
@@ -290,18 +289,17 @@ int main(int argc, char *argv[]){
             (inst)sub,  //12
             (inst)mul,  //13
             (inst)Div,  //14
-            (inst)nada,
-            (inst)nada,
-            (inst)Or,
-            (inst)Xor,
-            (inst)nada,
-            (inst)shl,
-            (inst)shr,
-            (inst)sar,
-            (inst)ldl,
-            (inst)ldh,
-            (inst)rnd
-
+            (inst)cmp,  //15
+            (inst)And,  //16
+            (inst)Or,   //17
+            (inst)Xor,  //18
+            (inst)swap, //19
+            (inst)shl,  //1A
+            (inst)shr,  //1B
+            (inst)sar,  //1C
+            (inst)ldl,  //1D
+            (inst)ldh,  //1E
+            (inst)rnd   //1F
         };
 
         uint8_t memoriaPrincipal[TAM_RAM];
@@ -370,6 +368,7 @@ int main(int argc, char *argv[]){
                     disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
 
                     printf("ECX: %d\n", (int32_t)regTabla[12]);
+                    printf("EAX: %d\n", (int32_t)regTabla[10]);
                     //printf("\nAC: %u", regTabla[16]);
                     mostrarCC(regTabla);
 

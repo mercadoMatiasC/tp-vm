@@ -64,7 +64,6 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
     for(i=0;i<nBytes;i++){
         memoriaPrincipal[direcFisica+i]=(valor>>((nBytes-1-i)*8)) & 0xFF;
     }
-
 }
 
 uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
@@ -217,7 +216,7 @@ int32_t devuelveNumero(char *cadBinaria, int cantBits) {
     return resultado;
 }
 
-void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     int i;
     uint32_t direcLogica, valor;
 
@@ -293,10 +292,9 @@ void sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
             }
         }
-
 }
 
-void jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     // 1. Leemos el offset almacenado en reg1, el offset es un operando inmediato
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
@@ -305,7 +303,7 @@ void jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
     regTabla[0] = direcLogica;
 }
 
-void jp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void   jp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
 
@@ -316,16 +314,15 @@ void jp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memo
         regTabla[0]=direcLogica;
 }
 
-void Jn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void   Jn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
     if(bitNegativo)
         regTabla[0]=direcLogica;
-
 }
 
-void jz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void   jz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
@@ -333,7 +330,7 @@ void jz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memo
         regTabla[0]=direcLogica;
 }
 
-void jc(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void   jc(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitAcarreo=(regTabla[17]>>29) & 0x1;
@@ -341,7 +338,7 @@ void jc(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memo
         regTabla[0]=direcLogica;
 }
 
-void jv(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void   jv(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitDesborda=(regTabla[17]>>28) & 0x1;
@@ -349,17 +346,16 @@ void jv(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memo
         regTabla[0]=direcLogica;
 }
 
-void jnp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  jnp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
     if(bitNegativo || bitCero)
         regTabla[0]=direcLogica;
-
 }
 
-void jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
@@ -368,7 +364,7 @@ void jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
         regTabla[0]=direcLogica;
 }
 
-void jnz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  jnz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
@@ -376,7 +372,7 @@ void jnz(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
         regTabla[0]=direcLogica;
 }
 
-void Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
 
     uint32_t resultado = ~valor; //NO EXISTE OVERFLOW/CARRY EN OPERACIONES LOGICAS
@@ -386,14 +382,18 @@ void Not(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
     actualizarCC_General(valor, 0, regTabla, resultado, 3);
 }
 
-void mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    regTabla[0]=0xFFFFFFFF;
+}
+
+void  mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor2=leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
     escribeOperando(reg1,valor2,regTabla,segTabla,memoriaPrincipal);
     actualizarCC_General(reg1, valor2, regTabla, valor2, 3);
 }
 
-void add(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  add(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -404,7 +404,7 @@ void add(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 1); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
 
-void sub(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  sub(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -415,7 +415,7 @@ void sub(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
 
-void mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -426,7 +426,7 @@ void mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 5); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
 
-void Div(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+void  Div(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -446,27 +446,61 @@ void Div(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     }
 }
 
-void ldl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    uint32_t valorDestino = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valorOrigen  = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+void  cmp(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    //Conservar los 16 bits superiores de reg1 y reemplazar los 16 bits inferiores con la parte baja de reg2
-    uint32_t resultado = (valorDestino & 0xFFFF0000) | (valorOrigen & 0x0000FFFF);
+    uint64_t resultado = (uint64_t)valor1 - (uint64_t)valor2;
+
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
+}
+
+void  And(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t resultado = valor1 & valor2;
+
+    printf("\nRESULTADO: %u", resultado);
 
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 3);
 }
 
-void ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    uint32_t valorDestino = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valorOrigen  = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+void   Or(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    //Conservar los 16 bits inferiores de reg1 y colocar la parte baja de reg2 en los 16 bits superiores
-    uint32_t resultado = (valorOrigen << 16) | (valorDestino & 0x0000FFFF);
-    escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
+    uint32_t res = valor1 | valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
+
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, res, 3);
 }
 
-void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+void  Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint32_t res = valor1 ^ valor2;
+
+    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
+
+    //ACTUALIZAR CC
+    actualizarCC_General(valor1, valor2, regTabla, res, 3);
+}
+
+void swap(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
+    Xor(reg2, reg1, regTabla, segTabla, memoriaPrincipal);
+    Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
+}
+
+void  shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -478,7 +512,7 @@ void shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 7);
 }
 
-void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+void  shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -490,7 +524,7 @@ void shr(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 8);
 }
 
-void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+void  sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
     uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
@@ -502,11 +536,26 @@ void sar(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
     actualizarCC_General(valor1, valor2, regTabla, resultado, 9);
 }
 
-void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    regTabla[0]=0xFFFFFFFF;
+void  ldl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valorDestino = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valorOrigen  = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    //Conservar los 16 bits superiores de reg1 y reemplazar los 16 bits inferiores con la parte baja de reg2
+    uint32_t resultado = (valorDestino & 0xFFFF0000) | (valorOrigen & 0x0000FFFF);
+
+    escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 }
 
-void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+void  ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valorDestino = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valorOrigen  = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    //Conservar los 16 bits inferiores de reg1 y colocar la parte baja de reg2 en los 16 bits superiores
+    uint32_t resultado = (valorOrigen << 16) | (valorDestino & 0x0000FFFF);
+    escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
+}
+
+void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     int32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
     uint32_t rndVal = rand() % (valor2 + 1);
 
@@ -516,22 +565,4 @@ void rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
         printf("ERROR: Argumento invalido");
         exit(1);
     }
-}
-
-void Or(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
-
-    uint32_t res = valor1 | valor2;
-
-    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
-}
-
-void Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
-
-    uint32_t res = valor1 ^ valor2;
-
-    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
 }
