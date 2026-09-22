@@ -251,7 +251,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
 void mostrarCC(uint32_t regTabla[]){
     uint32_t flags = (regTabla[17] >> 28) & 0x0F;
 
-    printf("\nCC (NZCV): %u%u%u%u",
+    printf("CC (NZCV): %u%u%u%u",
         (flags >> 3) & 1,  // Bit N
         (flags >> 2) & 1,  // Bit Z
         (flags >> 1) & 1,  // Bit C
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]){
             (inst)sub,  //12
             (inst)mul,  //13
             (inst)Div,  //14
-            (inst)nada,
+            (inst)cmp,
             (inst)nada,
             (inst)Or,
             (inst)Xor,
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]){
                     //printf("\nAC: %u", regTabla[16]);
                     mostrarCC(regTabla);
 
-                    printf("\n\n-------------------------------------------------------\n");
+                    printf("\n-------------------------------------------------------\n");
                     //DEBUG
                 }
             }else

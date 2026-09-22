@@ -414,6 +414,13 @@ void sub(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla
 
     actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
+void cmp(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+
+    uint64_t resultado = (uint64_t)valor1 - (uint64_t)valor2; //HAGO LA RESTA SIN SIGNO PARA VER CUANTO DEBE DAR
+    actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
+}
 
 void mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
