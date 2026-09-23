@@ -232,7 +232,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             }
 
 
-    printf("\n[%04X] codIns: %02X ",direcFisica,vecHexa[0]);
+    printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
     for(i=1;i<tamInstruccion;++i){
         printf(" %02X ",vecHexa[i]);
     }
@@ -367,8 +367,8 @@ int main(int argc, char *argv[]){
                     //DEBUG
                     disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
 
-                    printf("ECX: %d\n", (int32_t)regTabla[12]);
-                    printf("EAX: %d\n", (int32_t)regTabla[10]);
+                    //printf("ECX: %d\n", (int32_t)regTabla[12]);
+                    //printf("EAX: %d\n", (int32_t)regTabla[10]);
                     //printf("\nAC: %u", regTabla[16]);
                     mostrarCC(regTabla);
 

@@ -41,11 +41,11 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
     }
     if (nBytes == 1) {
         // Convierte el valor de 8 bits a int8_t para interpretar el bit de signo
-        // y luego expande los 1s a los 32 bits del uint32_t[cite: 3]
+        // y luego expande los 1s a los 32 bits del uint32_t
         resultado = (uint32_t)(int32_t)(int8_t)resultado;
     } else if (nBytes == 2) {
         // Convierte el valor de 16 bits a int16_t para interpretar el bit de signo
-        // y luego expande los 1s a los 32 bits del uint32_t[cite: 3]
+        // y luego expande los 1s a los 32 bits del uint32_t
         resultado = (uint32_t)(int32_t)(int16_t)resultado;
     }
     // Si nBytes == 4, no requiere extensión de signo porque ya ocupa los 32 bits completos.
@@ -254,10 +254,15 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 printf(" 0o%o ",dato);
             }
             if (formatoCaracter == 1) {
-                if (dato >= 32 && dato <= 126) { // ASCII imprimible
-                    printf( " %c ",dato);
-                } else {
-                    printf("."); // No imprimible
+                // Recorremos los bytes contenidos en 'dato' de mayor a menor jerarquía
+                for (int b = cantBytes - 1; b >= 0; b--) {
+                    uint8_t caracter;
+                    caracter = (dato >> (8 * b)) & 0xFF; // Extrae 1 byte 
+                    if (caracter >= 32 && caracter <= 126)
+                    printf("%c", (char)caracter);
+                    else 
+                        printf(".");
+                    
                 }
             }
             if(formatoDecimal == 1){
@@ -414,13 +419,6 @@ void  sub(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
     actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
 }
-void cmp(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
-
-    uint64_t resultado = (uint64_t)valor1 - (uint64_t)valor2; //HAGO LA RESTA SIN SIGNO PARA VER CUANTO DEBE DAR
-    actualizarCC_General(valor1, valor2, regTabla, resultado, 2); //LE PASO EL RESULTADO TOTAL PROVISORIO PARA EVALUAR
-}
 
 void  mul(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
@@ -574,37 +572,9 @@ void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
     }
 }
 
-void Or(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    uint32_t res = valor1 | valor2;
 
-    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
-}
 
-void Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    uint32_t res = valor1 ^ valor2;
 
-    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
-}
 
-void And(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
-
-    uint32_t res = valor1 & valor2;
-
-    escribeOperando(reg1, res, regTabla, segTabla, memoriaPrincipal);
-}
-
-void swap(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
-    uint32_t valor1 = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
-    uint32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
-
-    escribeOperando(reg1, valor2, regTabla, segTabla, memoriaPrincipal);
-    escribeOperando(reg2, valor1, regTabla, segTabla, memoriaPrincipal);
-}
