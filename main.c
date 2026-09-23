@@ -232,7 +232,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             }
 
 
-    printf("\n[%04X] codIns: %02X ",direcFisica,vecHexa[0]);
+    printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
     for(i=1;i<tamInstruccion;++i){
         printf(" %02X ",vecHexa[i]);
     }
@@ -250,7 +250,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
 void mostrarCC(uint32_t regTabla[]){
     uint32_t flags = (regTabla[17] >> 28) & 0x0F;
 
-    printf("\nCC (NZCV): %u%u%u%u",
+    printf("CC (NZCV): %u%u%u%u",
         (flags >> 3) & 1,  // Bit N
         (flags >> 2) & 1,  // Bit Z
         (flags >> 1) & 1,  // Bit C
@@ -367,12 +367,12 @@ int main(int argc, char *argv[]){
                     //DEBUG
                     disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
 
-                    printf("ECX: %d\n", (int32_t)regTabla[12]);
-                    printf("EAX: %d\n", (int32_t)regTabla[10]);
+                    //printf("ECX: %d\n", (int32_t)regTabla[12]);
+                    //printf("EAX: %d\n", (int32_t)regTabla[10]);
                     //printf("\nAC: %u", regTabla[16]);
                     mostrarCC(regTabla);
 
-                    printf("\n\n-------------------------------------------------------\n");
+                    printf("\n-------------------------------------------------------\n");
                     //DEBUG
                 }
             }else
