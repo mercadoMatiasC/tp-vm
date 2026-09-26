@@ -6,7 +6,7 @@
 
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
-
+    printf("El codSeg es %d \n",codSeg);
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
 
     if(codSeg<0 || codSeg>7){
@@ -15,17 +15,18 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int n
     }
 
     uint32_t direcBase=segTabla[codSeg].base; //Obtengo de la tabla de descriptores la direc base
-    int32_t direcFisica=(int32_t)direcBase+offset;//Necesito castearlo a negativo por si entra un offset negativo, para asi poder valir la direcFisica
+    int32_t direcFisica=(int32_t)direcBase+(int32_t)offset;//Necesito castearlo a negativo por si entra un offset negativo, para asi poder valir la direcFisica
                                                     //Si trato a direcFisica y a direcBase como uint, el offset negativo me lo promocionan a positivo y dejaria de ser un valor invalido
 
-    if((int32_t)direcBase>direcFisica){//falta validar los limites que consultare el jueves
-        printf("Fallo de segmento");
+    if((int32_t)direcBase>direcFisica){
+        printf("Fallo de segmento entre aca");
         exit(1);
     }
     int32_t limiteSegmento= (int32_t)direcBase+segTabla[codSeg].tamaño;
     int32_t limiteAcceso=direcFisica+nBytes;
     if(limiteSegmento<limiteAcceso){
-        printf("Fallo de segmento");
+        printf("Fallo de segmento entre aqui");
+        printf("Tamanio de DS es: %d y los nBytes son: %d y el codSeg es %d ",segTabla[codSeg].tamaño,nBytes,codSeg);
         exit(1);
     }
     return direcBase + offset;
@@ -98,8 +99,8 @@ void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSeg
         regTabla[codReg]=valor;
     }
     else{
-        uint32_t offset = (regOp >> 8) & 0x0000FFFF;
-        uint32_t direcLogica = offset + regTabla[codReg];
+        int16_t offset = (regOp >> 8) & 0x0000FFFF;
+        uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
         escribirMemoria(direcLogica,valor,regTabla,segTabla,memoriaPrincipal,4);
     }
 }

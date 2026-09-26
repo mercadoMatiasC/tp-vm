@@ -114,7 +114,7 @@ uint32_t tamInstruccion(uint8_t instruccion){
 }
 
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
-    uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][8];
+    uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][50];
     int tamInstruccion=1,i,index=1,tamAssembler=1;
     char offset[16];
     char assemblerReg[32][8]={
@@ -208,12 +208,14 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             sprintf(vecAssembler[1],"%d",(int16_t)(regOP1 & 0xFFFF));
         else
             if(tip1==3){
-                sprintf(offset,"%d",(regOP1 >>8) & 0xFFFF);
+                sprintf(offset,"%d",(int16_t)((regOP1 >>8) & 0xFFFF));
                 strcpy(vecAssembler[1],"[");
                 strcat(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
-                strcat(vecAssembler[1],"+");
+                if((int16_t)((regOP1 >>8) & 0xFFFF)>=0)
+                    strcat(vecAssembler[1],"+");
                 strcat(vecAssembler[1],offset);
                 strcat(vecAssembler[1],"]");
+                
             }
 
     if(tip2==1)
@@ -223,15 +225,16 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             sprintf(vecAssembler[2],"%d",(int16_t)(regOP2 & 0xFFFF));
         else
             if(tip2==3){
-                sprintf(offset,"%d",(regOP2 >>8) & 0xFFFF);
+                sprintf(offset,"%d",(int16_t)((regOP2 >>8) & 0xFFFF));
                 strcpy(vecAssembler[2],"[");
                 strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
-                strcat(vecAssembler[2],"+");
+                if((int16_t)((regOP2 >>8) & 0xFFFF)>=0)
+                    strcat(vecAssembler[2],"+");
                 strcat(vecAssembler[2],offset);
                 strcat(vecAssembler[2],"]");
             }
 
-
+   
     printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
     for(i=1;i<tamInstruccion;++i){
         printf(" %02X ",vecHexa[i]);
@@ -316,6 +319,7 @@ int main(int argc, char *argv[]){
 
             if(validarCabecera(cabecera)){
                 tamCodigo = ((uint16_t)cabecera[6]<<8) | cabecera[7];
+               
                 segTabla[0].tamaño = tamCodigo;           //CS
                 segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
 
