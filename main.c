@@ -343,7 +343,7 @@ int main(int argc, char *argv[]){
 
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
-
+                    
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                         codOp1=(regTabla[2]>>24)&0x000000FF;
 

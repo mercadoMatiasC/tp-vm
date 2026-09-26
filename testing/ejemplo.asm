@@ -1,3 +1,2 @@
-MOV EAX, 10100
-MOV [EAX-100],5
-MOV [DS],[EAX-100]
+LDH EAX,8   ; 16 bits superiores = 8 (codSeg = 8)
+MOV EBX, [EAX]         ; Intenta leer usando el segmento 8
