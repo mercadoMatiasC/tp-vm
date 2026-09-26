@@ -7,7 +7,7 @@ typedef struct{
   uint16_t tamaño;
 } regSegmento;
 
-uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]);
+uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes);
 uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[],uint8_t nBytes);
 void escribirMemoria(uint32_t direcLogica,uint32_t valor, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[],uint8_t nBytes);
 uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]);
