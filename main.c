@@ -327,7 +327,7 @@ int main(int argc, char *argv[]){
                 while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
                     /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
                     por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
-                    direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla);
+                    direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla,1);
                     instruccion=memoriaPrincipal[direcFisicaIns];
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
@@ -364,8 +364,9 @@ int main(int argc, char *argv[]){
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
 
-                    //DEBUG
-                    disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+                    if(condDissasembler){
+                        disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+                    }
 
                     //printf("ECX: %d\n", (int32_t)regTabla[12]);
                     //printf("EAX: %d\n", (int32_t)regTabla[10]);

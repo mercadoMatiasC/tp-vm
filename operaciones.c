@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "operaciones.h"
 
-uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
+uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
 
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
@@ -22,6 +22,12 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[]){
         printf("Fallo de segmento");
         exit(1);
     }
+    int32_t limiteSegmento= (int32_t)direcBase+segTabla[codSeg].tamaño;
+    int32_t limiteAcceso=direcFisica+nBytes;
+    if(limiteSegmento<limiteAcceso){
+        printf("Fallo de segmento");
+        exit(1);
+    }
     return direcBase + offset;
 }
 
@@ -34,7 +40,7 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
     regTabla[4]=direcLogica;//modifico el LAR
 
 
-    direcFisica=convertirDirecLogica(direcLogica, segTabla);
+    direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
     regTabla[5]=(uint32_t)nBytes<<16 | direcFisica;//modifico el MAR
     for(i=0;i<nBytes;++i){
         resultado= (resultado<<8) | memoriaPrincipal[direcFisica+i];
@@ -59,7 +65,7 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
     int i;
 
 
-    direcFisica=convertirDirecLogica(direcLogica, segTabla);
+    direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
 
     for(i=0;i<nBytes;i++){
         memoriaPrincipal[direcFisica+i]=(valor>>((nBytes-1-i)*8)) & 0xFF;
@@ -72,13 +78,14 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
 
     if (codOp == 1) {
         return regTabla[codReg];
-    } else
+    }else
         if (codOp == 2)
             // Al castear primero a int16_t y luego a int32_t/uint32_t, 0xFFFF pasa a ser 0xFFFFFFFF (-1)
             return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF);
         else {
-            uint32_t offset = (regOp >> 8) & 0x0000FFFF;
-            uint32_t direcLogica = offset + regTabla[codReg];
+            int16_t offset = (regOp >> 8) & 0x0000FFFF;
+            uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
+           //Sumar offset no con registro sino con los 2 bytes menos significativos y despues conectarlo con los 2 bytes mas significativos del registro codReg
             return leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
         }
 }
@@ -241,7 +248,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
             uint8_t formatoHexa     = (regTabla[10] >> 3) & 0x01; // Bit 3
             uint8_t formatoBinario  = (regTabla[10] >> 4) & 0x01; // Bit 4
 
-            uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla);
+            uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
             printf("[%04X]: ", direcFisica);
             if(formatoBinario==1){
                 devuelveBinario(dato,cadBinario,8*cantBytes);
@@ -275,7 +282,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
         if(valor==1){//READ
             for(i=0;i<cantCeldas;++i){
                 direcLogica = regTabla[13] + cantBytes * i;
-                uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla);
+                uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
                 printf("[%04X]: ", direcFisica);
                 if(regTabla[10]==0x10){
                     scanf(" %s",cadBinario);
@@ -438,7 +445,7 @@ void  Div(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
     //EVITAR DIVISION POR 0
     if (valor2 == 0) {
         printf("\nERROR: Division por cero.");
-        //ACA ALGUN EFECTO SECUNDARIO?
+        exit(1);
     }else{
         uint32_t cociente = valor1 / valor2; //NUNCA HABRÁ OVERFLOW/CARRY EN DIVISION ENTERA
         uint32_t resto    = valor1 % valor2;
