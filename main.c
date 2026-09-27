@@ -250,6 +250,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
     printf("\n");
 }
 
+
 void mostrarCC(uint32_t regTabla[]){
     uint32_t flags = (regTabla[17] >> 28) & 0x0F;
 
@@ -336,7 +337,7 @@ int main(int argc, char *argv[]){
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-
+                   
 
                     //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
