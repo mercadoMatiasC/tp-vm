@@ -360,17 +360,17 @@ int main(int argc, char *argv[]){
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
 
-                    if(condDissasembler){
+                    if(condDissasembler)
                         disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-                    }
 
-                    //printf("ECX: %d\n", (int32_t)regTabla[12]);
-                    //printf("EAX: %d\n", (int32_t)regTabla[10]);
-                    //printf("\nAC: %u", regTabla[16]);
-                    mostrarCC(regTabla);
-
-                    printf("\n-------------------------------------------------------\n");
-                    //DEBUG
+                    //DEBUG - INÍCIO
+                        printf("ECX: %d\n", (int32_t)regTabla[12]);
+                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        //printf("\nAC: %u", regTabla[16]);
+                        mostrarCC(regTabla);
+                            
+                        printf("\n-------------------------------------------------------\n");
+                    //DEBUG - FIN
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
