@@ -336,8 +336,8 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
             }
         }else{
-            exit(1);
             printf("ERROR: Operacion SYS no valida");
+            exit(1);
         }
 }
 
