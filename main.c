@@ -365,8 +365,8 @@ int main(int argc, char *argv[]){
                         disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
 
                     //DEBUG - INÍCIO
-                        //printf("ECX: %d\n", (int32_t)regTabla[12]);
-                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        printf("ECX: %d\n", (int32_t)regTabla[12]);
+                        printf("EAX: %d\n", (int32_t)regTabla[10]);
                         //printf("\nAC: %u", regTabla[16]);
                       
                         mostrarCC(regTabla);
