@@ -215,7 +215,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
                     strcat(vecAssembler[1],"+");
                 strcat(vecAssembler[1],offset);
                 strcat(vecAssembler[1],"]");
-                
+
             }
 
     if(tip2==1)
@@ -234,7 +234,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
                 strcat(vecAssembler[2],"]");
             }
 
-   
+
     printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
     for(i=1;i<tamInstruccion;++i){
         printf(" %02X ",vecHexa[i]);
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]){
 
             if(validarCabecera(cabecera)){
                 tamCodigo = ((uint16_t)cabecera[6]<<8) | cabecera[7];
-               
+
                 segTabla[0].tamaño = tamCodigo;           //CS
                 segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
 
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]){
 
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
-                    
+
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                         codOp1=(regTabla[2]>>24)&0x000000FF;
 
@@ -360,23 +360,23 @@ int main(int argc, char *argv[]){
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
 
-                    if(condDissasembler){
+                    if(condDissasembler)
                         disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-                    }
 
-                    //printf("ECX: %d\n", (int32_t)regTabla[12]);
-                    //printf("EAX: %d\n", (int32_t)regTabla[10]);
-                    //printf("\nAC: %u", regTabla[16]);
-                    mostrarCC(regTabla);
-
-                    printf("\n-------------------------------------------------------\n");
-                    //DEBUG
+                    //DEBUG - INÍCIO
+                        printf("ECX: %d\n", (int32_t)regTabla[12]);
+                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        //printf("\nAC: %u", regTabla[16]);
+                        mostrarCC(regTabla);
+                            
+                        printf("\n-------------------------------------------------------\n");
+                    //DEBUG - FIN
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
+            fclose(archExe);
         }else
             printf("\nERROR: Archivo invalido");
-        fclose(archExe);
     }else
         printf("\nERROR: Cantidad de argumentos invalidos");
     return 0;

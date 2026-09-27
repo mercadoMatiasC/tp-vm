@@ -1,5 +1,9 @@
 .vscode/*
 .main
 main.exe
+main
+vmx
+vmx.exe
 testing/asmTovmx.bat
-testing/vmt.exe
+testing/asmTovmx.sh
+vmt
