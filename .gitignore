@@ -6,3 +6,4 @@ vmx
 vmx.exe
 testing/asmTovmx.bat
 testing/asmTovmx.sh
+vmt
