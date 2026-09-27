@@ -261,7 +261,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 
     // Extraemos tamaño (16 bits superiores) y cantidad (16 bits inferiores) de ECX (regTabla[12])
     uint16_t cantBytes = (regTabla[12] >> 16) & 0xFFFF;
-    uint8_t cantCeldas = regTabla[12] & 0xFFFF;
+    uint16_t cantCeldas = regTabla[12] & 0xFFFF;
     char cadBinario[33];
     int32_t dato;
 
