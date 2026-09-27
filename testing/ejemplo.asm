@@ -1,19 +1,23 @@
-MOV [DS],2
-ADD [DS],3
-MOV EAX,7
-MOV [DS],EAX
-MOV [DS+4],[DS]
-ADD [DS],-1
-NOT [DS]
-
-MOV EAX,0x0F0F
-MOV EBX,0x00FF
-OR EAX,EBX
-MOV [DS+8],EAX
-
-XOR EAX,EBX
-MOV [DS+12],EAX
-
-RND EAX,10
-MOV [DS+16],EAX
-STOP
+mov eax, 1
+ldh eax, 0x8000
+shl eax, 1
+mov eex, eax
+mov eax, 1
+ldh eax, 0x8000
+shr eax, 1
+mov efx, eax
+mov eax, 1
+ldh eax, 0x8000
+sar eax, 1
+mov ebx, eax
+sar eax, 0
+mov [DS], eex
+mov [DS+4], efx
+mov [DS+8], ebx
+mov [DS+12], eax
+mov eax, 0x08
+mov edx, DS
+ldh ecx, 4
+ldl ecx, 4
+sys 2
+stop

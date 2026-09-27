@@ -3,3 +3,5 @@
 main.exe
 main
 vmx
+testing/asmTovmx.bat
+testing/asmTovmx.sh
