@@ -25,6 +25,7 @@ void mostrarCC(uint32_t regTabla[]);
 
 
 
+
 //IMPLEMENTACIONES
 int validarCabecera(uint8_t cabecera[]){
     char id[6];

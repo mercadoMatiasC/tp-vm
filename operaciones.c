@@ -173,15 +173,14 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
             break;
 
         case 7: { // SHL
-            if (shift > 0 && shift < 32) //C DEPENDE DEL ÚLTIMO BIT QUE QUEDÓ AFUERA
-                C = (u1 >> (32 - shift)) & 1;
-            else if (shift == 32)
-                C = u1 & 1;
-            else 
+            if (shift > 0 && shift <= 32) {
+                uint64_t temp = (uint64_t)u1 << shift; //CON QUE UN 1 SE ESCAPE, SE ENCIENDE C
+                C = temp > 0xFFFFFFFFULL;
+            } else 
                 C = 0;
 
             int64_t res_s = (int64_t)s1 << shift;
-            V = (res_s < INT32_MIN) || (res_s > INT32_MAX); //V SE ACTIVARÁ SI EL NÚMERO NO CABE EN 32 BITS
+            V = (res_s < INT32_MIN) || (res_s > INT32_MAX); //SI NO SE PUEDE REPRESENTAR EN 32 BITS SIGNED, SE ENCIENDE V
             break;
         }
 
