@@ -8,8 +8,8 @@
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
-   
-    
+
+
     if(codSeg<0 || codSeg>7){
         printf("Fallo de segmento: codSeg invalido");
         exit(1);
@@ -26,9 +26,9 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int n
     int32_t limiteSegmento= (int16_t)direcBase+(int16_t)segTabla[codSeg].tamaño;//casteo direcBase a int y tamanio tambien
                                                                                 //entonces si codSeg=2, tamanio y base seran tomados como -1 y no como un numero muy grande
     int32_t limiteAcceso=direcFisica+nBytes;
-    
+
     if(limiteSegmento<limiteAcceso){
-        
+
         printf("Fallo de segmento: limiteAcceso>limiteSegmento");
         exit(1);
     }
@@ -42,15 +42,15 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
 
 
     regTabla[4]=direcLogica;//modifico el LAR
-    
+
 
     direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
-    
+
     regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);
     for(i=0;i<nBytes;++i){
         resultado= (resultado<<8) | memoriaPrincipal[direcFisica+i];
     }
-    
+
     if (nBytes == 1) {
         // Convierte el valor de 8 bits a int8_t para interpretar el bit de signo
         // y luego expande los 1s a los 32 bits del uint32_t
@@ -60,7 +60,7 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
         // y luego expande los 1s a los 32 bits del uint32_t
         resultado = (uint32_t)(int32_t)(int16_t)resultado;
     }
-    
+
     // Si nBytes == 4, no requiere extensión de signo porque ya ocupa los 32 bits completos.
     regTabla[6]=resultado; //modifico el registro MBR
     return resultado;
@@ -85,7 +85,7 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
 uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint8_t codOp = (regOp >> 24) & 0x000000FF;
     uint32_t codReg = regOp & 0x0000001F;
-    
+
     if (codOp == 1) {
         return regTabla[codReg];
     }else
@@ -95,9 +95,9 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
         else {
             int16_t offset = (regOp >> 8) & 0x0000FFFF;
             uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-            
+
            //Sumar offset no con registro sino con los 2 bytes menos significativos y despues conectarlo con los 2 bytes mas significativos del registro codReg
-           
+
            return leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
         }
 }
@@ -112,7 +112,7 @@ void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSeg
     else{
         int16_t offset = (regOp >> 8) & 0x0000FFFF;
         uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-        
+
         escribirMemoria(direcLogica,valor,regTabla,segTabla,memoriaPrincipal,4);
     }
 }
@@ -128,7 +128,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
     //AUXILIARES UNSIGNED PARA CALCULAR EL CARRY
     uint64_t u1 = (uint32_t)op1;
     uint64_t u2 = (uint32_t)op2;
-    
+
     //AUXILIARES SIGNED PARA CALCULAR EL OVERFLOW
     int64_t  s1 = (int32_t)op1;
     int64_t  s2 = (int32_t)op2;
@@ -147,7 +147,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
 
         case 2: { // SUB y CMP
             int64_t res_s = s1 - s2;
-            
+
             C = (u1 < u2); //BORROW
             V = (res_s < INT32_MIN || res_s > INT32_MAX);
             break;
@@ -296,12 +296,12 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 // Recorremos los bytes contenidos en 'dato' de mayor a menor jerarquía
                 for (int b = cantBytes - 1; b >= 0; b--) {
                     uint8_t caracter;
-                    caracter = (dato >> (8 * b)) & 0xFF; // Extrae 1 byte 
+                    caracter = (dato >> (8 * b)) & 0xFF; // Extrae 1 byte
                     if (caracter >= 32 && caracter <= 126)
                     printf("%c", (char)caracter);
-                    else 
+                    else
                         printf(".");
-                    
+
                 }
             }
             if(formatoDecimal == 1){
@@ -431,12 +431,12 @@ void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[
 }
 
 void  mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    
+
     uint32_t valor2=leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-    
+
     escribeOperando(reg1,valor2,regTabla,segTabla,memoriaPrincipal);
-    
+
     actualizarCC_General(reg1, valor2, regTabla, valor2, 3);
 }
 
@@ -517,7 +517,7 @@ void  And(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
     uint32_t resultado = valor1 & valor2;
 
-    printf("\nRESULTADO: %u", resultado);
+    //printf("\nRESULTADO: %u", resultado);
 
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 
@@ -550,9 +550,11 @@ void  Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 }
 
 void swap(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
-    Xor(reg2, reg1, regTabla, segTabla, memoriaPrincipal);
-    Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
+    if(reg1 != reg2){
+        Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
+        Xor(reg2, reg1, regTabla, segTabla, memoriaPrincipal);
+        Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
+    }
 }
 
 void  shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
@@ -607,7 +609,7 @@ void  ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
     //Conservar los 16 bits inferiores de reg1 y colocar la parte baja de reg2 en los 16 bits superiores
     uint32_t resultado = (valorOrigen << 16) | (valorDestino & 0x0000FFFF);
-    
+
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 }
 
