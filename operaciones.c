@@ -41,6 +41,7 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
     uint32_t resultado=0;
 
 
+
     regTabla[4]=direcLogica;//modifico el LAR
 
 
@@ -317,7 +318,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
                 printf("[%04X]: ", direcFisica);
                 if(regTabla[10]==0x10){
-                    scanf(" %s",cadBinario);
+                    scanf(" %32s",cadBinario);
                     dato=devuelveNumero(cadBinario,8*cantBytes);
                 }
                 else
