@@ -8,8 +8,8 @@
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
-
-
+   
+    
     if(codSeg<0 || codSeg>7){
         printf("Fallo de segmento: codSeg invalido");
         exit(1);
@@ -26,9 +26,9 @@ uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int n
     int32_t limiteSegmento= (int16_t)direcBase+(int16_t)segTabla[codSeg].tamaño;//casteo direcBase a int y tamanio tambien
                                                                                 //entonces si codSeg=2, tamanio y base seran tomados como -1 y no como un numero muy grande
     int32_t limiteAcceso=direcFisica+nBytes;
-
+    
     if(limiteSegmento<limiteAcceso){
-
+        
         printf("Fallo de segmento: limiteAcceso>limiteSegmento");
         exit(1);
     }
@@ -41,17 +41,16 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
     uint32_t resultado=0;
 
 
-
     regTabla[4]=direcLogica;//modifico el LAR
-
+    
 
     direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
-
+    
     regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);
     for(i=0;i<nBytes;++i){
         resultado= (resultado<<8) | memoriaPrincipal[direcFisica+i];
     }
-
+    
     if (nBytes == 1) {
         // Convierte el valor de 8 bits a int8_t para interpretar el bit de signo
         // y luego expande los 1s a los 32 bits del uint32_t
@@ -61,7 +60,7 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
         // y luego expande los 1s a los 32 bits del uint32_t
         resultado = (uint32_t)(int32_t)(int16_t)resultado;
     }
-
+    
     // Si nBytes == 4, no requiere extensión de signo porque ya ocupa los 32 bits completos.
     regTabla[6]=resultado; //modifico el registro MBR
     return resultado;
@@ -75,7 +74,7 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
     regTabla[4]=direcLogica;//modifico el LAR
     direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
 
-    regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);//modifico el MAR
+    regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);
 
     for(i=0;i<nBytes;i++){
         memoriaPrincipal[direcFisica+i]=(valor>>((nBytes-1-i)*8)) & 0xFF;
@@ -86,7 +85,7 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
 uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint8_t codOp = (regOp >> 24) & 0x000000FF;
     uint32_t codReg = regOp & 0x0000001F;
-
+    
     if (codOp == 1) {
         return regTabla[codReg];
     }else
@@ -96,9 +95,9 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
         else {
             int16_t offset = (regOp >> 8) & 0x0000FFFF;
             uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-
+            
            //Sumar offset no con registro sino con los 2 bytes menos significativos y despues conectarlo con los 2 bytes mas significativos del registro codReg
-
+           
            return leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
         }
 }
@@ -113,7 +112,7 @@ void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSeg
     else{
         int16_t offset = (regOp >> 8) & 0x0000FFFF;
         uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-
+        
         escribirMemoria(direcLogica,valor,regTabla,segTabla,memoriaPrincipal,4);
     }
 }
@@ -129,7 +128,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
     //AUXILIARES UNSIGNED PARA CALCULAR EL CARRY
     uint64_t u1 = (uint32_t)op1;
     uint64_t u2 = (uint32_t)op2;
-
+    
     //AUXILIARES SIGNED PARA CALCULAR EL OVERFLOW
     int64_t  s1 = (int32_t)op1;
     int64_t  s2 = (int32_t)op2;
@@ -148,9 +147,9 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
 
         case 2: { // SUB y CMP
             int64_t res_s = s1 - s2;
-
-            C = (u1 < u2); //BORROW
-            V = (res_s < INT32_MIN || res_s > INT32_MAX);
+            
+            C = s1 < s2;
+            V = (res_s < INT32_MIN) || (res_s > INT32_MAX);
             break;
         }
 
@@ -173,14 +172,18 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
             V = 0;
             break;
 
-        case 7: // SHL
-            if (shift > 0 && shift <= 32)
-                C = ((u1 >> (32 - shift)) & 1); //C DEPENDE DEL ÚLTIMO BIT QUE QUEDÓ AFUERA
-            else
+        case 7: { // SHL
+            if (shift > 0 && shift < 32) //C DEPENDE DEL ÚLTIMO BIT QUE QUEDÓ AFUERA
+                C = (u1 >> (32 - shift)) & 1;
+            else if (shift == 32)
+                C = u1 & 1;
+            else 
                 C = 0;
 
-            V = 0;
+            int64_t res_s = (int64_t)s1 << shift;
+            V = (res_s < INT32_MIN) || (res_s > INT32_MAX); //V SE ACTIVARÁ SI EL NÚMERO NO CABE EN 32 BITS
             break;
+        }
 
         case 8: // SHR
         case 9: // SAR
@@ -197,7 +200,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
     regTabla[17] = (N << 31) | (Z << 30) | (C << 29) | (V << 28);
 }
 
-void nada(){
+void nada() {
     printf("nada\n");
 }
 
@@ -230,7 +233,6 @@ void devuelveBinario(int32_t num, char* cad, int nBits) {
     }
 }
 
-
 int32_t devuelveNumero(char *cadBinaria, int cantBits) {
     // 1. Usar uint32_t evita el Undefined Behavior al desplazar el bit 31
     uint32_t resultado = 0;
@@ -262,7 +264,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 
     // Extraemos tamaño (16 bits superiores) y cantidad (16 bits inferiores) de ECX (regTabla[12])
     uint16_t cantBytes = (regTabla[12] >> 16) & 0xFFFF;
-    uint16_t cantCeldas = regTabla[12] & 0xFFFF;
+    uint8_t cantCeldas = regTabla[12] & 0xFFFF;
     char cadBinario[33];
     int32_t dato;
 
@@ -297,12 +299,12 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 // Recorremos los bytes contenidos en 'dato' de mayor a menor jerarquía
                 for (int b = cantBytes - 1; b >= 0; b--) {
                     uint8_t caracter;
-                    caracter = (dato >> (8 * b)) & 0xFF; // Extrae 1 byte
+                    caracter = (dato >> (8 * b)) & 0xFF; // Extrae 1 byte 
                     if (caracter >= 32 && caracter <= 126)
                     printf("%c", (char)caracter);
-                    else
+                    else 
                         printf(".");
-
+                    
                 }
             }
             if(formatoDecimal == 1){
@@ -318,7 +320,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
                 printf("[%04X]: ", direcFisica);
                 if(regTabla[10]==0x10){
-                    scanf(" %32s",cadBinario);
+                    scanf(" %s",cadBinario);
                     dato=devuelveNumero(cadBinario,8*cantBytes);
                 }
                 else
@@ -336,9 +338,6 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
             }
-        }else{
-            printf("ERROR: Operacion SYS no valida");
-            exit(1);
         }
 }
 
@@ -408,7 +407,7 @@ void  jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
-    if(bitNegativo==0)
+    if(bitNegativo==0 || bitCero)
         regTabla[0]=direcLogica;
 }
 
@@ -435,12 +434,12 @@ void stop(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[
 }
 
 void  mov(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-
+    
     uint32_t valor2=leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
 
-
+    
     escribeOperando(reg1,valor2,regTabla,segTabla,memoriaPrincipal);
-
+    
     actualizarCC_General(reg1, valor2, regTabla, valor2, 3);
 }
 
@@ -521,7 +520,7 @@ void  And(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
     uint32_t resultado = valor1 & valor2;
 
-    //printf("\nRESULTADO: %u", resultado);
+    printf("\nRESULTADO: %u", resultado);
 
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 
@@ -611,17 +610,17 @@ void  ldh(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
     //Conservar los 16 bits inferiores de reg1 y colocar la parte baja de reg2 en los 16 bits superiores
     uint32_t resultado = (valorOrigen << 16) | (valorDestino & 0x0000FFFF);
-
+    
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 }
 
 void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     int32_t valor2 = leerOperando(reg2, regTabla, segTabla, memoriaPrincipal);
+    uint32_t rndVal = rand() % (valor2 + 1);
 
-    if(valor2>0){
-        uint32_t rndVal = rand() % (valor2 + 1);
+    if(valor2>0)
         escribeOperando(reg1, rndVal,regTabla, segTabla, memoriaPrincipal);
-    } else {
+    else {
         printf("ERROR: Argumento invalido");
         exit(1);
     }
