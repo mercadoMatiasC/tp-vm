@@ -45,7 +45,7 @@ uint32_t leerMemoria(uint32_t direcLogica, uint32_t regTabla[], regSegmento segT
 
     direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
     
-    regTabla[5]=(uint32_t)nBytes<<16 | direcFisica;//modifico el MAR
+    regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);
     for(i=0;i<nBytes;++i){
         resultado= (resultado<<8) | memoriaPrincipal[direcFisica+i];
     }
@@ -70,12 +70,15 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
     uint32_t direcFisica;
     int i;
 
-
+    regTabla[4]=direcLogica;//modifico el LAR
     direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
+
+    regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);
 
     for(i=0;i<nBytes;i++){
         memoriaPrincipal[direcFisica+i]=(valor>>((nBytes-1-i)*8)) & 0xFF;
     }
+    regTabla[6]=valor; //modifico el registro MBR
 }
 
 uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
