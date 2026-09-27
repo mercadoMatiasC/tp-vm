@@ -553,11 +553,9 @@ void  Xor(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 }
 
 void swap(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    if(reg1 != reg2){
-        Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
-        Xor(reg2, reg1, regTabla, segTabla, memoriaPrincipal);
-        Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
-    }
+    Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
+    Xor(reg2, reg1, regTabla, segTabla, memoriaPrincipal);
+    Xor(reg1, reg2, regTabla, segTabla, memoriaPrincipal);
 }
 
 void  shl(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
