@@ -1,1 +1,2 @@
-mov [DS-5],7
+MOV [eax],OP1
+stop
