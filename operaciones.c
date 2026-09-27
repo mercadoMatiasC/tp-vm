@@ -75,7 +75,7 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
     regTabla[4]=direcLogica;//modifico el LAR
     direcFisica=convertirDirecLogica(direcLogica, segTabla,nBytes);
 
-    regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);
+    regTabla[5] = ((uint32_t)nBytes << 16) | (direcFisica & 0xFFFF);//modifico el MAR
 
     for(i=0;i<nBytes;i++){
         memoriaPrincipal[direcFisica+i]=(valor>>((nBytes-1-i)*8)) & 0xFF;
@@ -408,7 +408,7 @@ void  jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
-    if(bitNegativo==0 || bitCero)
+    if(bitNegativo==0)
         regTabla[0]=direcLogica;
 }
 
