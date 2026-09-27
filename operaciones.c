@@ -148,8 +148,8 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
         case 2: { // SUB y CMP
             int64_t res_s = s1 - s2;
             
-            C = (u1 < u2); //BORROW
-            V = (res_s < INT32_MIN || res_s > INT32_MAX);
+            C = s1 < s2;
+            V = (res_s < INT32_MIN) || (res_s > INT32_MAX);
             break;
         }
 
@@ -172,14 +172,18 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
             V = 0;
             break;
 
-        case 7: // SHL
-            if (shift > 0 && shift <= 32)
-                C = ((u1 >> (32 - shift)) & 1); //C DEPENDE DEL ÚLTIMO BIT QUE QUEDÓ AFUERA
-            else
+        case 7: { // SHL
+            if (shift > 0 && shift < 32) //C DEPENDE DEL ÚLTIMO BIT QUE QUEDÓ AFUERA
+                C = (u1 >> (32 - shift)) & 1;
+            else if (shift == 32)
+                C = u1 & 1;
+            else 
                 C = 0;
 
-            V = 0;
+            int64_t res_s = (int64_t)s1 << shift;
+            V = (res_s < INT32_MIN) || (res_s > INT32_MAX); //V SE ACTIVARÁ SI EL NÚMERO NO CABE EN 32 BITS
             break;
+        }
 
         case 8: // SHR
         case 9: // SAR
@@ -196,7 +200,7 @@ void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t
     regTabla[17] = (N << 31) | (Z << 30) | (C << 29) | (V << 28);
 }
 
-void nada(){
+void nada() {
     printf("nada\n");
 }
 
@@ -228,7 +232,6 @@ void devuelveBinario(int32_t num, char* cad, int nBits) {
         cad[idx] = '\0'; // Cierre de cadena
     }
 }
-
 
 int32_t devuelveNumero(char *cadBinaria, int cantBits) {
     // 1. Usar uint32_t evita el Undefined Behavior al desplazar el bit 31

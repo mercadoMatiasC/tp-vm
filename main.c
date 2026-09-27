@@ -365,7 +365,7 @@ int main(int argc, char *argv[]){
 
                     //DEBUG - INÍCIO
                         printf("ECX: %d\n", (int32_t)regTabla[12]);
-                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        printf("EAX: %d\n", (int32_t)regTabla[10]);
                         //printf("\nAC: %u", regTabla[16]);
                         mostrarCC(regTabla);
                             
