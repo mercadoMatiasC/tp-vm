@@ -408,7 +408,7 @@ void  jnn(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
     uint32_t direcLogica = regTabla[26]+offset;//sumamos CS + offset
     uint8_t bitNegativo=(regTabla[17]>>31) & 0x1;
     uint8_t bitCero=(regTabla[17]>>30) & 0x1;
-    if(bitNegativo==0 || bitCero)
+    if(bitNegativo==0)
         regTabla[0]=direcLogica;
 }
 
