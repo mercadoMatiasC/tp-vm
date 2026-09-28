@@ -1,2 +1,1 @@
-MOV [eax],OP1
-stop
+MOV OP1,0

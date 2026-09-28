@@ -25,6 +25,7 @@ void mostrarCC(uint32_t regTabla[]);
 
 
 
+
 //IMPLEMENTACIONES
 int validarCabecera(uint8_t cabecera[]){
     char id[6];
@@ -346,6 +347,8 @@ int main(int argc, char *argv[]){
                     codIns=instruccion & 0x1F;
 
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
+                        if(condDissasembler)
+                            disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
                         codOp1=(regTabla[2]>>24)&0x000000FF;
 
                         if(condDissasembler)
@@ -357,27 +360,30 @@ int main(int argc, char *argv[]){
                         if(codIns>=0x00 && codIns<=0x0A){
                             if(condDissasembler)
                                 disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-
                             ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
-                        }else
+                        }
+                        else
                             if(codIns==0x0F){
                                 if(condDissasembler)
                                     disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-
-
                                  ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
-                            }else{
+                            }
+                            else{
                                 printf("\nERROR: Instruccion invalida");
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
 
-                    /*DEBUG - INÍCIO
-                        printf("ECX: %d\n", (int32_t)regTabla[12]);
-                        printf("EAX: %d\n", (int32_t)regTabla[10]);
-                        //printf("\nAC: %u", regTabla[16]);
-                        mostrarCC(regTabla);
 
-                        printf("\n-------------------------------------------------------\n");
+
+                    //DEBUG - INÍCIO
+                        //printf("MBR: %X \n",regTabla[6]);
+                        //printf("ECX: %d\n", (int32_t)regTabla[12]);
+                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        //printf("\nAC: %u", regTabla[16]);
+
+                        //mostrarCC(regTabla);
+
+                    printf("\n-------------------------------------------------------\n");
                     //DEBUG - FIN*/
                 }
             }else
