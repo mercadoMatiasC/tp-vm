@@ -1,2 +1,1 @@
-MOV DS,4
-MOV [DS-4],6
+MOV OP1,0
