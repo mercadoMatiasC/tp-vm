@@ -306,7 +306,7 @@ int main(int argc, char *argv[]){
             (inst)rnd   //1F
         };
 
-        uint8_t memoriaPrincipal[TAM_RAM];
+        uint8_t memoriaPrincipal[TAM_RAM] = {0};
         uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
         regSegmento segTabla[CANT_SEGMENTOS];
         uint16_t tamCodigo;
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]){
                 tamCodigo = ((uint16_t)cabecera[6]<<8) | cabecera[7];
 
                 segTabla[0].tamaño = tamCodigo;           //CS
-                segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
+                segTabla[1].tamaño = TAM_RAM - tamCodigo; //DSz
 
                 iniciarTablaSegmentos(segTabla, 2);
                 iniciarRegistros(regTabla);
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]){
 
                     //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                     asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                   
+
 
                     //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
@@ -348,30 +348,37 @@ int main(int argc, char *argv[]){
                     if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                         codOp1=(regTabla[2]>>24)&0x000000FF;
 
+                        if(condDissasembler)
+                            disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
-                        
+
                     }else
-                        if(codIns>=0x00 && codIns<=0x0A)
+                        if(codIns>=0x00 && codIns<=0x0A){
+                            if(condDissasembler)
+                                disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+
                             ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
-                        else
-                            if(codIns==0x0F)
+                        }else
+                            if(codIns==0x0F){
+                                if(condDissasembler)
+                                    disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+
+
                                  ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
-                            else{
+                            }else{
                                 printf("\nERROR: Instruccion invalida");
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
 
-                    if(condDissasembler)
-                        disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-
-                    //DEBUG - INÍCIO
+                    /*DEBUG - INÍCIO
                         printf("ECX: %d\n", (int32_t)regTabla[12]);
                         printf("EAX: %d\n", (int32_t)regTabla[10]);
                         //printf("\nAC: %u", regTabla[16]);
                         mostrarCC(regTabla);
-                            
+
                         printf("\n-------------------------------------------------------\n");
-                    //DEBUG - FIN
+                    //DEBUG - FIN*/
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
