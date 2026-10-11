@@ -4,16 +4,20 @@
 #include <string.h>
 #include "operaciones.h"
 
+
 #define CANT_INSTRUCCIONES 48
-#define TAM_CABECERA 8
+#define TAM_VERSION1 2
+#define TAM_VERSION2 12
+#define TAM_ID_VERSION 6
 #define CANT_SEGMENTOS 8
 #define TAM_RAM 16384
 #define ID "VMX26"
-#define VERSION 1
+#define VERSION1 1
+#define VERSION2 2
 #define CANT_REGISTROS 32
 
 //DEFINICIONES
-int validarCabecera(uint8_t[]);
+int validarID_VERSION(uint8_t[]);
 void iniciarTablaSegmentos(regSegmento[], int);
 void iniciarRegistros(uint32_t[]);
 
@@ -23,19 +27,18 @@ uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegment
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2);
 void mostrarCC(uint32_t regTabla[]);
 
-
-
-
+void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[],uint16_t posicion,uint8_t vecSeg[],uint16_t tamSeg);
+uint8_t* crearVecParam(int argc, char *argv[],uint16_t *tamParam,char indiceVMX,char indiceVMI);
 //IMPLEMENTACIONES
-int validarCabecera(uint8_t cabecera[]){
+int validarID_VERSION(uint8_t cabecera[]){
     char id[6];
     uint8_t version=cabecera[5];
 
     memcpy(id,cabecera,5); //copia al vector id los primeros 5 bytes de cabecera
     id[5]='\0';
 
-    if (!strcmp(id, ID) && version==VERSION)
-        return 1;
+    if (!strcmp(id, ID) && (version==VERSION1 || version==VERSION2))
+        return version;
     else
         return 0;
 }
@@ -53,6 +56,35 @@ void iniciarTablaSegmentos(regSegmento segmentos[], int n){
         segmentos[i].tamaño = 0xFFFF;
     }
 }
+void iniciarTablaSegmentos2(regSegmento segmentos[],uint16_t tamCodigo,uint16_t tamExtra,uint16_t tamStack,uint16_t tamConst,uint16_t tamData,uint16_t tamParam){
+    uint16_t baseAct = 0; //Acumula los tamaño de los segmentos anteriores para usarlo como base del siguiente segmento
+    uint8_t n=0;
+    if(tamParam!=0){
+        segmentos[n++].tamaño=tamParam;
+    }
+    if(tamConst!=0){
+        segmentos[n++].tamaño=tamConst;
+    }
+    segmentos[n++].tamaño=tamCodigo;
+    if(tamData!=0){
+        segmentos[n++].tamaño=tamData;
+    }
+    if(tamExtra!=0){
+        segmentos[n++].tamaño=tamExtra;
+    }
+    segmentos[n++].tamaño=tamStack;
+
+    for (int i = 0; i < n; i++){  // Calculo la base actual de cada segmento de acuerdo al tamaño anterior
+        segmentos[i].base = baseAct;
+        baseAct += segmentos[i].tamaño;
+    }
+
+    for(int i = n; i < CANT_SEGMENTOS; i++){ // Resto del vector completo en -1
+        segmentos[i].base = 0xFFFF;
+        segmentos[i].tamaño = 0xFFFF;
+    }
+}
+
 
 void iniciarRegistros(uint32_t registros[]){
     memset(registros, 0, sizeof(uint32_t)*CANT_REGISTROS); // inicializo todo en 0 para mantener limpieza
@@ -64,6 +96,48 @@ void iniciarRegistros(uint32_t registros[]){
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
 }
 
+void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra,uint16_t tamStack,uint16_t tamConst,uint16_t tamData,uint16_t offsetEntry,uint16_t tamParam){
+    memset(registros, 0, sizeof(uint32_t)*CANT_REGISTROS); // inicializo todo en 0 para mantener limpieza
+
+    uint8_t posTabla=0; //posicion en tabla de descriptores
+    registros[26] = 0x00000000;               // defino el registro CS, 4High = id segmento,
+    registros[27] = 0x0001 << 16;             // defino el registro DS, 4High = id segmento,
+    registros[0]  = registros[26];            // defino IP apuntando al primer byte del segmento de codigo
+
+    if(tamParam!=0){ //PS
+        registros[31]=0x00000000;
+        posTabla++;
+    }
+    else
+        registros[31]=0xFFFFFFFF;
+    
+    if(tamConst!=0){//KS
+        registros[30]=posTabla<<16;
+        posTabla++;
+    }
+    else
+        registros[31]=0xFFFFFFFF;
+    registros[26]=posTabla<<16; //CS
+    posTabla++;
+    if(tamData!=0){//DS
+        registros[27]=posTabla<<16;
+        posTabla++;
+    }
+    else
+        registros[27]=0xFFFFFFFF;
+    if(tamExtra!=0){//ES
+        registros[28]=posTabla<<16;
+        posTabla++;
+    }
+    else
+        registros[28]=0xFFFFFFFF;
+    registros[29]=posTabla<<16;//SS
+
+    registros[7]=registros[29]+tamStack;//Inicializo el registro SP
+    registros[0]=(registros[26]&0xFFFF0000) | (offsetEntry&0xFFFF);
+
+    
+}
 
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns){
     uint32_t auxTipo,tip1,tip2,op1,op2;
@@ -263,12 +337,148 @@ void mostrarCC(uint32_t regTabla[]){
     );
 }
 
+void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[], uint16_t posicion, uint8_t vecSeg[], uint16_t tamSeg) {
+    for (int i = 0; i < tamSeg; i++) {
+        memoriaPrincipal[posicion + i] = vecSeg[i];
+    }
+}
+
+uint8_t* crearVecParam(int argc, char *argv[], uint16_t *tamParam, char indiceVMX, char indiceVMI) {
+    int i;
+    int indiceParam = -1;
+
+    // 1. Buscar en argv dónde arranca la opción -p
+    for (i = 0; i < argc; ++i) {
+        if (strcmp(argv[i], "-p") == 0) {
+            indiceParam = i + 1;//A partir de aca comienzan los parametros que no vmx ni vmi
+            break;
+        }
+    }
+
+    // 2. Construir el vector de palabras (char**) internamente
+    int cantPalabras = 0;
+    cantPalabras+=indiceVMI!=0;
+    cantPalabras+=indiceVMX!=0;
+   
+    cantPalabras += (argc - indiceParam);
+
+    if (cantPalabras == 0) {
+        *tamParam = 0;
+        return NULL;
+    }
+
+    // Puntero dinámico a la lista de palabras, las palabras son punteros a char y al ser dinamico es un vector de punteros a (punteros a char==palabras)
+    char * *vecPalabras = (char **) malloc(cantPalabras * sizeof(char *));
+    int posPalabra = 0;
+
+    // Cargar el nombre del ejecutable (.vmx o .vmi)
+    if (indiceVMX != -1) {
+        vecPalabras[posPalabra++] = argv[(int)indiceVMX];
+    } else if (indiceVMI != -1) {
+        vecPalabras[posPalabra++] = argv[(int)indiceVMI];
+    }
+
+    // Cargar las palabras tras el flag -p
+    if (indiceParam != -1 && indiceParam < argc) {
+        for (i = indiceParam; i < argc; ++i) {
+            vecPalabras[posPalabra++] = argv[i];
+        }
+    }
+
+    // 3. Calcular el tamaño en bytes para la sección de textos
+    uint16_t tamBytesTexto = 0;
+    for (i = 0; i < cantPalabras; ++i) {
+        tamBytesTexto += (uint16_t)(strlen(vecPalabras[i]) + 1); // +1 por el '\0'
+    }
+
+    uint16_t tamBytesOffsets = cantPalabras * 4; // 4 bytes por offset de cada palabra
+
+    // 4. Crear los 2 PUNTEROS DINÁMICOS auxiliares
+    //el vecAuxLetras sera un parte del vector Param, en cada byte ira una letra
+    uint8_t *vecAuxLetras = (uint8_t *) calloc(tamBytesTexto, sizeof(uint8_t));
+    //el vecAuxOffsets almacenara cada 4 bytes un puntero a una palabra;
+    uint8_t *vecAuxOffsets  = (uint8_t *) calloc(tamBytesOffsets, sizeof(uint8_t));
+
+    uint16_t posTexto = 0;
+    uint16_t posOffset = 0;
+
+    // 5. Cargar simultáneamente el contenido en ambos vectores dinámicos
+    for (i = 0; i < cantPalabras; ++i) {
+        uint16_t largo = (uint16_t)strlen(vecPalabras[i]);
+
+        // A) Copia de las letras/caracteres en vecAuxPalabras
+        memcpy(&vecAuxLetras[posTexto], vecPalabras[i], largo + 1);//el +1 es por el \0
+
+        // B) Guardar el offset actual (posTexto) empacado en 4 bytes en vecAuxOffsets
+        uint32_t offsetActual = (uint32_t)posTexto;
+        vecAuxOffsets[posOffset++] = (offsetActual >> 24) & 0xFF;
+        vecAuxOffsets[posOffset++] = (offsetActual >> 16) & 0xFF;
+        vecAuxOffsets[posOffset++] = (offsetActual >> 8)  & 0xFF;
+        vecAuxOffsets[posOffset++] = offsetActual & 0xFF;
+
+        // Avanzar la posición del puntero de texto
+        posTexto += (largo + 1);
+    }
+
+    // 6. Concatenar todo en el vector final unificado
+    uint16_t tamTotal = tamBytesTexto + tamBytesOffsets;
+    uint8_t *vecParam = (uint8_t *) calloc(tamTotal, sizeof(uint8_t));
+
+    memcpy(vecParam, vecAuxLetras , tamBytesTexto);
+    memcpy(&vecParam[tamBytesTexto], vecAuxOffsets, tamBytesOffsets);
+
+    // 7. Liberar la memoria de los vectores auxiliares
+    free(vecPalabras);
+    free(vecAuxLetras);
+    free(vecAuxOffsets);
+
+    *tamParam = tamTotal;
+    return vecParam;
+}
 
 int main(int argc, char *argv[]){
-    int condDissasembler;
-    if(argc<=3){
-        condDissasembler = (argc >2 && !(strcmp(argv[2],"-d")));
-        FILE *archExe = fopen(argv[1], "rb");
+    int condDissasembler=0;
+    char indiceVMX = -1;
+    char indiceVMI = -1;
+    int tamMemoria = TAM_RAM;          
+    
+
+    int hayParam = 0;
+    // Recorremos todos los argumentos ingresados
+    for (int i = 1; i < argc; i++) {
+
+        // 1. Si encontramos -p, guardamos el índice y cortamos el bucle
+        // (porque la consigna dice que -p va siempre al final)
+        if (strcmp(argv[i], "-p") == 0) {
+            hayParam=1;
+            break; 
+        }
+
+        // 2. Si es la opción de desensamblador -d
+        if (strcmp(argv[i], "-d") == 0) {
+            condDissasembler = 1;
+        }
+        // 3. Si indica el tamaño de memoria m=M
+        else if (strncmp(argv[i], "m=", 2) == 0) {
+            tamMemoria = atoi(&argv[i][2]); // Extrae el número después de "m="
+        }
+        // 4. Si termina en .vmx (es el archivo ejecutable)
+        else if (strstr(argv[i], ".vmx") != NULL) {
+            indiceVMX = i;
+        }
+        // 5. Si termina en .vmi (es el archivo de imagen)[cite: 1]
+        else if (strstr(argv[i], ".vmi") != NULL) {
+            indiceVMI =i;
+        }
+    }
+
+    // --- VALIDACIÓN DE ERRORES ---
+    if (indiceVMX == -1 && indiceVMI == -1) {
+        printf("Error: Tenés que pasar al menos un archivo .vmx o .vmi\n");
+        return 1;
+    }
+    
+        FILE *archExe = fopen(argv[indiceVMX], "rb");
 
         inst vecInstrucciones[CANT_INSTRUCCIONES] = {
             (inst)sys,  //00
@@ -307,88 +517,110 @@ int main(int argc, char *argv[]){
             (inst)rnd   //1F
         };
 
-        uint8_t memoriaPrincipal[TAM_RAM];
-        uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
+        uint8_t memoriaPrincipal[tamMemoria];
+        uint8_t id_version[TAM_ID_VERSION]; 
         regSegmento segTabla[CANT_SEGMENTOS];
-        uint16_t tamCodigo;
+        uint16_t tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam;
         uint32_t regTabla[CANT_REGISTROS];
 
         uint8_t instruccion;
         uint32_t direcFisicaIns, codIns, codOp1, codOp2, op1, op2;
 
-        if(archExe){
-            fread(cabecera, sizeof(uint8_t), 8, archExe);
+        
+        uint8_t *vecParam=NULL;
 
-            if(validarCabecera(cabecera)){
-                tamCodigo = ((uint16_t)cabecera[6]<<8) | cabecera[7];
+        if(archExe){//Recibe un .vmx
 
-                segTabla[0].tamaño = tamCodigo;           //CS
-                segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
+            if(hayParam){
+                vecParam=crearVecParam(argc,argv,&tamParam,indiceVMX,indiceVMI);
+            }
 
-                iniciarTablaSegmentos(segTabla, 2);
-                iniciarRegistros(regTabla);
+            fread(id_version, sizeof(uint8_t), 6, archExe);
+            uint8_t version=validarID_VERSION(id_version);
+            if(version){
+                if(version==1){
+                    uint8_t tamSegmentos[TAM_VERSION1];//el vector almacena los bytes de tamaño del CS
+                    fread(tamSegmentos, sizeof(uint8_t), TAM_VERSION1, archExe);
+                    tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
+                    uint8_t vecCodigo[tamCodigo];
+                    
+                    if(hayParam==0){//no hay parametros
+                        segTabla[0].tamaño = tamCodigo;           //CS
+                        segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
 
-                fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
-
-                while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
-                    /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
-                    por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
-                    direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla,1);
-                    instruccion=memoriaPrincipal[direcFisicaIns];
-
-                    //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
-                    asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                   
-
-                    //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
-                    regTabla[0]+=tamInstruccion(instruccion);
-
-                    //Ejecuto la instruccion
-                    codIns=instruccion & 0x1F;
-
-                    if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
-                        if(condDissasembler)
-                            disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-                        codOp1=(regTabla[2]>>24)&0x000000FF;
-
-                        ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
+                        iniciarTablaSegmentos(segTabla, 2);
+                        iniciarRegistros(regTabla);
+                        fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
+                    }
+                    else{//hay parametros y van primero en la memoria principal
                         
-                    }else
-                        if(codIns>=0x00 && codIns<=0x0A){
-                            if(condDissasembler)
-                                disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-                            ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
-                        }
-                        else
-                            if(codIns==0x0F){
-                                if(condDissasembler)
-                                    disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-                                 ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
-                            }
-                            else{
-                                printf("\nERROR: Instruccion invalida");
-                                exit(1); //termina de forma abrupta la ejecucion del programa
-                            }
-
+                        fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
+                        agregarSegmentoEnMemoria(memoriaPrincipal,0,vecParam,tamParam);
+                        agregarSegmentoEnMemoria(memoriaPrincipal,tamParam,vecCodigo,tamCodigo);
+                        iniciarTablaSegmentos2(segTabla,tamCodigo,0,0,0,0,tamParam);
+                        iniciarRegistros2(regTabla,tamCodigo,0,0,0,0,0,tamParam);
+                    }
                     
 
-                    //DEBUG - INÍCIO
-                        //printf("MBR: %X \n",regTabla[6]);
-                        //printf("ECX: %d\n", (int32_t)regTabla[12]);
-                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
-                        //printf("\nAC: %u", regTabla[16]);
-                      
-                        //mostrarCC(regTabla);
+                    while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
+                        /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
+                        por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
+                        direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla,1);
+                        instruccion=memoriaPrincipal[direcFisicaIns];
+
+                        //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
+                        asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
+                    
+
+                        //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
+                        regTabla[0]+=tamInstruccion(instruccion);
+
+                        //Ejecuto la instruccion
+                        codIns=instruccion & 0x1F;
+
+                        if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
+                            codOp1=(regTabla[2]>>24)&0x000000FF;
+
+                            ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                             
-                        printf("\n-------------------------------------------------------\n");
-                    //DEBUG - FIN
+                        }else
+                            if(codIns>=0x00 && codIns<=0x0A)
+                                ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                            else
+                                if(codIns==0x0F)
+                                    ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
+                                else{
+                                    printf("\nERROR: Instruccion invalida");
+                                    exit(1); //termina de forma abrupta la ejecucion del programa
+                                }
+
+                        if(condDissasembler)
+                            disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+
+                    }
+                }
+                else{//version2
+                    uint8_t tamSegmentos[TAM_VERSION2];//el vector almacena los bytes de tamaño de los segmentos CS,DS,ES,SS,CS y el offset del entry point
+                    fread(tamSegmentos, sizeof(uint8_t), TAM_VERSION2, archExe);
+                    tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
+                    tamData=((uint16_t)tamSegmentos[2]<<8) | tamSegmentos[3];
+                    tamExtra=((uint16_t)tamSegmentos[4]<<8) | tamSegmentos[5];
+                    tamStack=((uint16_t)tamSegmentos[6]<<8) | tamSegmentos[7];
+                    tamConst=((uint16_t)tamSegmentos[8]<<8) | tamSegmentos[9];
+                    offsetEntry=((uint16_t)tamSegmentos[10]<<8) | tamSegmentos[11];
+
+                    fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
+                    
+                    uint8_t vecCodigo[tamCodigo];
+                    uint8_t vecConst[tamConst];
+                    
+
+
+                    
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
             fclose(archExe);
         }else
             printf("\nERROR: Archivo invalido");
-    }else
-        printf("\nERROR: Cantidad de argumentos invalidos");
-    return 0;
 }
