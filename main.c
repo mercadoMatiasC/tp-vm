@@ -63,7 +63,6 @@ void iniciarRegistros(uint32_t registros[]){
     //Nose si se requieren mas inicializaciones, dejo abierto a actualizacion;
 }
 
-
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns){
     uint32_t auxTipo,tip1,tip2,op1,op2;
     int tamInstruccion=1,i;
@@ -187,6 +186,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             "LDH",  //1E
             "RND"   //1F
     };
+
     tip1=regOP1>>24;
     tip2=regOP2>>24;
 
@@ -196,6 +196,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         vecHexa[i+1]=(regOP2>>((tip2-1-i)*8))&0xFF; //almaceno a partir del byte 1 del regOP1
         tamInstruccion++;//El tamanio de la instruccion incremento un byte
     }
+
     for(i=0;i<tip1;i++){
         vecHexa[i+1+tip2]=(regOP1>> ((tip1-1-i)*8)) &0xFF;
         tamInstruccion++;
@@ -228,28 +229,26 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
                 sprintf(offset,"%d",(int16_t)((regOP2 >>8) & 0xFFFF));
                 strcpy(vecAssembler[2],"[");
                 strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+
                 if((int16_t)((regOP2 >>8) & 0xFFFF)>=0)
                     strcat(vecAssembler[2],"+");
+
                 strcat(vecAssembler[2],offset);
                 strcat(vecAssembler[2],"]");
             }
 
-
     printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
-    for(i=1;i<tamInstruccion;++i){
-        printf(" %02X ",vecHexa[i]);
-    }
 
-    tamAssembler+= tip1!=0;
-    tamAssembler+= tip2!=0;
+    for(i=1;i<tamInstruccion;++i)
+        printf(" %02X ",vecHexa[i]); 
+
+    tamAssembler += tip1!=0;
+    tamAssembler += tip2!=0;
     printf("| %s ",vecAssembler[0]);
 
-    for(i=1;i<tamAssembler;++i){
+    for(i=1;i<tamAssembler;++i)
         printf(" %s ",vecAssembler[i]);
-    }
-    printf("\n");
 }
-
 
 void mostrarCC(uint32_t regTabla[]){
     uint32_t flags = (regTabla[17] >> 28) & 0x0F;
@@ -324,10 +323,27 @@ int main(int argc, char *argv[]){
                 segTabla[0].tamaño = tamCodigo;           //CS
                 segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
 
+                fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
+
+                if (condDissasembler) {
+                    printf("\n> DISASSEMBLER - INICIO <");
+                    uint32_t cursor = 0; //Para iterar por cada instrucción
+                    
+                    while (cursor < tamCodigo) {
+                        uint8_t instruccion = memoriaPrincipal[cursor];
+                        uint32_t regTablaAux[4] = {0};
+                        
+                        asignoRegsOperar(regTablaAux, instruccion, memoriaPrincipal, cursor);
+                        disassembler(instruccion, cursor, regTablaAux[2], regTablaAux[3]);
+                        
+                        cursor += tamInstruccion(instruccion);
+                    }
+
+                    printf("\n> DISASSEMBLER - FIN <\n");
+                }
+
                 iniciarTablaSegmentos(segTabla, 2);
                 iniciarRegistros(regTabla);
-
-                fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
 
                 while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
                     /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
@@ -349,7 +365,6 @@ int main(int argc, char *argv[]){
                         codOp1=(regTabla[2]>>24)&0x000000FF;
 
                         ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
-                        
                     }else
                         if(codIns>=0x00 && codIns<=0x0A)
                             ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
@@ -361,16 +376,12 @@ int main(int argc, char *argv[]){
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
 
-                    if(condDissasembler)
-                        disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
-
                     //DEBUG - INÍCIO
-                        printf("ECX: %d\n", (int32_t)regTabla[12]);
-                        printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        //printf("ECX: %d\n", (int32_t)regTabla[12]);
+                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
                         //printf("\nAC: %u", regTabla[16]);
-                        mostrarCC(regTabla);
-                            
-                        printf("\n-------------------------------------------------------\n");
+                        //mostrarCC(regTabla); 
+                        //printf("\n-------------------------------------------------------\n");
                     //DEBUG - FIN
                 }
             }else
