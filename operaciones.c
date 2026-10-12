@@ -5,6 +5,86 @@
 #include <limits.h> //TIENE CONSTANTES CON VALORES MAXIMOS Y MINIMOS DE TIPOS ENTEROS
 #include "operaciones.h"
 
+
+
+void guardarImagenVMI(char* nombreArchivoVMI, uint32_t regTabla[],regSegmento segTabla[],uint8_t memoriaPrincipal[]){
+    // 1. Abrir el archivo en modo binario de escritura ("wb")
+    FILE *archivo = fopen(nombreArchivoVMI, "wb");
+    if (archivo == NULL) {
+        printf("Error: No se pudo crear el archivo de imagen VMI: %s\n", nombreArchivoVMI);
+        return;
+    }
+    else{
+
+        // --- SECCIÓN 1: CABECERA (8 bytes) ---
+        // Bytes 0 - 4: Identificador "VMI26" (5 bytes)
+        fwrite("VMI26", sizeof(char), 5, archivo);
+
+        // Byte 5: Versión (1 byte, valor 1)
+        uint8_t version = 1;
+        fwrite(&version, sizeof(uint8_t), 1, archivo);
+
+        // Convertimos el tamaño de bytes a KiB para los bytes 6-7 
+        uint16_t tamMemoriaKiB = (uint16_t)(tamMemoria / 1024);
+        // Bytes 6 - 7: Tamaño de la memoria principal expresado en KiB 
+        uint8_t bit6 = (tamMemoriaKiB >> 8) & 0xFF;
+        uint8_t bit7 = tamMemoriaKiB & 0xFF;
+
+        fwrite(&bit6, sizeof(uint8_t), 1, archivo);
+        fwrite(&bit7, sizeof(uint8_t), 1, archivo);
+       
+
+        // --- SECCIÓN 2: REGISTROS (128 bytes) ---
+       
+        // Son 32 registros de 4 bytes cada uno
+        for (int i = 0; i < 32; i++) {
+            uint32_t reg = regTabla[i];
+            
+            uint8_t b[4];
+            b[0] = (reg >> 24) & 0xFF; // Byte más alto 
+            b[1] = (reg >> 16) & 0xFF;
+            b[2] = (reg >> 8)  & 0xFF;
+            b[3] = reg         & 0xFF; // Byte más bajo 
+            
+            fwrite(b, sizeof(uint8_t), 4, archivo);//De esta forma se van almacenar los registros en Big-Endian
+        }
+
+
+      
+        // --- SECCIÓN 3: TABLA DE DESCRIPTORES DE SEGMENTOS (32 bytes) ---
+        // Son 8 segmentos en total (CANT_SEGMENTOS). Cada uno tiene base (2 bytes) y tamaño (2 bytes).
+        
+        for (int i = 0; i < CANT_SEGMENTOS; i++) {
+            uint16_t base = segTabla[i].base;
+            uint16_t tam  = segTabla[i].tamaño;
+
+            // Descomponemos la 'base' en Big Endian (byte significativo primero y el menos despues)
+            uint8_t baseBytes[2] = {
+                (base >> 8) & 0xFF,
+                base & 0xFF
+            };
+
+            // Descomponemos el 'tamaño' en Big Endian (idem que base)
+            uint8_t tamBytes[2] = {
+                (tam >> 8) & 0xFF,
+                tam & 0xFF
+            };
+
+            // Escribimos los 2 bytes de la base
+            fwrite(baseBytes, sizeof(uint8_t), 2, archivo);
+            // Escribimos los 2 bytes del tamaño
+            fwrite(tamBytes, sizeof(uint8_t), 2, archivo);
+        }
+        
+        // --- SECCIÓN 4: MEMORIA PRINCIPAL  ---
+        // Volcamos todo el bloque de memoria RAM
+        fwrite(memoriaPrincipal, sizeof(uint8_t), tamMemoria, archivo);
+
+       
+        fclose(archivo);
+    }
+
+}
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
@@ -338,6 +418,37 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
             }
         }
+        else
+            if(valor==0x0F){
+                    // 1. Verificás si hay un archivo de imagen .vmi definido (por ejemplo, en una variable global o pasada por parámetro)
+                    if (nombreArchivoVMI != NULL) {
+                        // 2. Generás la imagen con el estado actual completo de la VM (Cabecera, Registros, Tabla de Segmentos y Memoria)
+                        guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
+                        printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
+                    } 
+
+                    /*// 3. Quedar a la espera de la acción de depuración del usuario (Debug prompt)
+                    char comando[10];
+                    while (1) {
+                        printf("vmg> "); // o el prompt de debug que prefieras
+                        if (fgets(comando, sizeof(comando), stdin) != NULL) {
+                            // Si presiona Enter (solo '\n'), ejecuta la siguiente instrucción y vuelve a frenar
+                            if (comando[0] == '\n') {
+                                // Aquí puedes activar un flag de "paso a paso" (step-by-step) para la VM
+                                break; 
+                            }
+                            // Si ingresa 'g' (go), continúa la ejecución normal hasta el próximo breakpoint o fin
+                            else if (comando[0] == 'g' || comando[0] == 'G') {
+                                break;
+                            }
+                            // Si ingresa 'q' (quit), aborta la ejecución dejando intacto el .vmi
+                            else if (comando[0] == 'q' || comando[0] == 'Q') {
+                                printf("Abortando ejecucion por el usuario.\n");
+                                exit(0); 
+                            }
+                        }
+                    }*/
+            }
 }
 
 void  jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {

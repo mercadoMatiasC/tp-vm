@@ -9,12 +9,17 @@
 #define TAM_VERSION1 2
 #define TAM_VERSION2 12
 #define TAM_ID_VERSION 6
-#define CANT_SEGMENTOS 8
+
 #define TAM_RAM 16384
 #define ID "VMX26"
 #define VERSION1 1
 #define VERSION2 2
-#define CANT_REGISTROS 32
+
+
+// Definición real de la variable global en el main.c
+char *nombreArchivoVMI = NULL;
+uint16_t tamMemoria;
+
 
 //DEFINICIONES
 int validarID_VERSION(uint8_t[]);
@@ -440,13 +445,12 @@ int main(int argc, char *argv[]){
     int condDissasembler=0;
     char indiceVMX = -1;
     char indiceVMI = -1;
-    int tamMemoria = TAM_RAM;          
+    tamMemoria = TAM_RAM;          
     
 
     int hayParam = 0;
     // Recorremos todos los argumentos ingresados
     for (int i = 1; i < argc; i++) {
-
         // 1. Si encontramos -p, guardamos el índice y cortamos el bucle
         // (porque la consigna dice que -p va siempre al final)
         if (strcmp(argv[i], "-p") == 0) {
@@ -478,7 +482,25 @@ int main(int argc, char *argv[]){
         return 1;
     }
     
+    
+    if (indiceVMI != -1) {
+        // Si el usuario pasó un archivo .vmi, guardamos su ruta/nombre 
+        // en la variable global para que el SYS 0xF (Breakpoint) pueda usarla.
+        nombreArchivoVMI = argv[indiceVMI];
+    }
+
+    
+    if(indiceVMX != -1) {
+        // Si el usuario pasó un archivo .vmx, lo abrimos para lectura binaria
+        // y ejecutamos el código dentro de él.
         FILE *archExe = fopen(argv[indiceVMX], "rb");
+        if (!archExe) {
+            printf("Error: No se pudo abrir el archivo %s\n", argv[indiceVMX]);
+            return 1;
+        }
+        fclose(archExe);
+    }
+    
 
         inst vecInstrucciones[CANT_INSTRUCCIONES] = {
             (inst)sys,  //00
@@ -525,7 +547,7 @@ int main(int argc, char *argv[]){
 
         uint8_t instruccion;
         uint32_t direcFisicaIns, codIns, codOp1, codOp2, op1, op2;
-
+      
         
         uint8_t *vecParam=NULL;
 
@@ -609,12 +631,11 @@ int main(int argc, char *argv[]){
                     tamConst=((uint16_t)tamSegmentos[8]<<8) | tamSegmentos[9];
                     offsetEntry=((uint16_t)tamSegmentos[10]<<8) | tamSegmentos[11];
 
+                    uint8_t vecCodigo[tamCodigo];
+
                     fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
                     
-                    uint8_t vecCodigo[tamCodigo];
                     uint8_t vecConst[tamConst];
-                    
-
 
                     
                 }
@@ -623,4 +644,5 @@ int main(int argc, char *argv[]){
             fclose(archExe);
         }else
             printf("\nERROR: Archivo invalido");
+    
 }

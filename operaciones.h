@@ -1,5 +1,11 @@
 #include <stdint.h>
 
+#define CANT_REGISTROS 32
+#define CANT_SEGMENTOS 8
+// Declaración extern de la variable global (ej. el nombre del archivo .vmi)
+extern char *nombreArchivoVMI;
+extern uint16_t tamMemoria;
+
 typedef void (*inst)(void);
 
 typedef struct{
