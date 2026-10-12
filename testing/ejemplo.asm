@@ -1,1 +1,2 @@
-MOV OP1,0
+MOV EAX, 5
+SYS 0xF
