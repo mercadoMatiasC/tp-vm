@@ -115,7 +115,7 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
     }
     else
         registros[31]=0xFFFFFFFF;
-    
+
     if(tamConst!=0){//KS
         registros[30]=posTabla<<16;
         posTabla++;
@@ -141,7 +141,7 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
     registros[7]=registros[29]+tamStack;//Inicializo el registro SP
     registros[0]=(registros[26]&0xFFFF0000) | (offsetEntry&0xFFFF);
 
-    
+
 }
 
 void asignoRegsOperar(uint32_t regTabla[], uint8_t instruccion, uint8_t memoriaPrincipal[], uint32_t direcFisicaIns){
@@ -364,7 +364,7 @@ uint8_t* crearVecParam(int argc, char *argv[], uint16_t *tamParam, char indiceVM
     int cantPalabras = 0;
     cantPalabras+=indiceVMI!=0;
     cantPalabras+=indiceVMX!=0;
-   
+
     cantPalabras += (argc - indiceParam);
 
     if (cantPalabras == 0) {
@@ -445,8 +445,8 @@ int main(int argc, char *argv[]){
     int condDissasembler=0;
     char indiceVMX = -1;
     char indiceVMI = -1;
-    tamMemoria = TAM_RAM;          
-    
+    tamMemoria = TAM_RAM;
+
 
     int hayParam = 0;
     // Recorremos todos los argumentos ingresados
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]){
         // (porque la consigna dice que -p va siempre al final)
         if (strcmp(argv[i], "-p") == 0) {
             hayParam=1;
-            break; 
+            break;
         }
 
         // 2. Si es la opción de desensamblador -d
@@ -481,26 +481,26 @@ int main(int argc, char *argv[]){
         printf("Error: Tenés que pasar al menos un archivo .vmx o .vmi\n");
         return 1;
     }
-    
-    
+
+
     if (indiceVMI != -1) {
-        // Si el usuario pasó un archivo .vmi, guardamos su ruta/nombre 
+        // Si el usuario pasó un archivo .vmi, guardamos su ruta/nombre
         // en la variable global para que el SYS 0xF (Breakpoint) pueda usarla.
         nombreArchivoVMI = argv[indiceVMI];
     }
 
-    
+    FILE *archExe = NULL;
     if(indiceVMX != -1) {
         // Si el usuario pasó un archivo .vmx, lo abrimos para lectura binaria
         // y ejecutamos el código dentro de él.
-        FILE *archExe = fopen(argv[indiceVMX], "rb");
+        archExe = fopen(argv[indiceVMX], "rb");
         if (!archExe) {
             printf("Error: No se pudo abrir el archivo %s\n", argv[indiceVMX]);
             return 1;
         }
         fclose(archExe);
     }
-    
+
 
         inst vecInstrucciones[CANT_INSTRUCCIONES] = {
             (inst)sys,  //00
@@ -540,15 +540,15 @@ int main(int argc, char *argv[]){
         };
 
         uint8_t memoriaPrincipal[tamMemoria];
-        uint8_t id_version[TAM_ID_VERSION]; 
+        uint8_t id_version[TAM_ID_VERSION];
         regSegmento segTabla[CANT_SEGMENTOS];
         uint16_t tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam;
         uint32_t regTabla[CANT_REGISTROS];
 
         uint8_t instruccion;
         uint32_t direcFisicaIns, codIns, codOp1, codOp2, op1, op2;
-      
-        
+
+
         uint8_t *vecParam=NULL;
 
         if(archExe){//Recibe un .vmx
@@ -565,7 +565,7 @@ int main(int argc, char *argv[]){
                     fread(tamSegmentos, sizeof(uint8_t), TAM_VERSION1, archExe);
                     tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
                     uint8_t vecCodigo[tamCodigo];
-                    
+
                     if(hayParam==0){//no hay parametros
                         segTabla[0].tamaño = tamCodigo;           //CS
                         segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
@@ -575,14 +575,14 @@ int main(int argc, char *argv[]){
                         fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
                     }
                     else{//hay parametros y van primero en la memoria principal
-                        
+
                         fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
                         agregarSegmentoEnMemoria(memoriaPrincipal,0,vecParam,tamParam);
                         agregarSegmentoEnMemoria(memoriaPrincipal,tamParam,vecCodigo,tamCodigo);
                         iniciarTablaSegmentos2(segTabla,tamCodigo,0,0,0,0,tamParam);
                         iniciarRegistros2(regTabla,tamCodigo,0,0,0,0,0,tamParam);
                     }
-                    
+
 
                     while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
                         /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
@@ -592,7 +592,7 @@ int main(int argc, char *argv[]){
 
                         //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                         asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
-                    
+
 
                         //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                         regTabla[0]+=tamInstruccion(instruccion);
@@ -604,7 +604,7 @@ int main(int argc, char *argv[]){
                             codOp1=(regTabla[2]>>24)&0x000000FF;
 
                             ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
-                            
+
                         }else
                             if(codIns>=0x00 && codIns<=0x0A)
                                 ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
@@ -634,15 +634,15 @@ int main(int argc, char *argv[]){
                     uint8_t vecCodigo[tamCodigo];
 
                     fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
-                    
+
                     uint8_t vecConst[tamConst];
 
-                    
+
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
             fclose(archExe);
         }else
             printf("\nERROR: Archivo invalido");
-    
+
 }
