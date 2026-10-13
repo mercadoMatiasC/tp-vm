@@ -85,6 +85,7 @@ void guardarImagenVMI(char* nombreArchivoVMI, uint32_t regTabla[],regSegmento se
     }
 
 }
+
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
     int codSeg=(direcLogica>>16)&0x0000FFFF;  //La mascara es por si cambiamos direcLogica a int para evitar extension de signo
     int16_t offset=direcLogica & 0x0000FFFF;      //Obtengo el desplazamiento de la direcLogica
@@ -448,7 +449,9 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                             }
                         }
                     }*/
-            }
+        }else
+            if(valor==0) //SYSx0 - CLEAR SCREEN
+                printf("\033[H\033[J");
 }
 
 void  jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
