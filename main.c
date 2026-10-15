@@ -39,9 +39,10 @@ int validarID_VERSION(uint8_t cabecera[]){
     char id[6];
     uint8_t version=cabecera[5];
 
+    
     memcpy(id,cabecera,5); //copia al vector id los primeros 5 bytes de cabecera
     id[5]='\0';
-
+   
     if (!strcmp(id, ID) && (version==VERSION1 || version==VERSION2))
         return version;
     else
@@ -105,9 +106,7 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
     memset(registros, 0, sizeof(uint32_t)*CANT_REGISTROS); // inicializo todo en 0 para mantener limpieza
 
     uint8_t posTabla=0; //posicion en tabla de descriptores
-    registros[26] = 0x00000000;               // defino el registro CS, 4High = id segmento,
-    registros[27] = 0x0001 << 16;             // defino el registro DS, 4High = id segmento,
-    registros[0]  = registros[26];            // defino IP apuntando al primer byte del segmento de codigo
+   
 
     if(tamParam!=0){ //PS
         registros[31]=0x00000000;
@@ -452,7 +451,7 @@ int main(int argc, char *argv[]){
     // Recorremos todos los argumentos ingresados
     for (int i = 1; i < argc; i++) {
         // 1. Si encontramos -p, guardamos el índice y cortamos el bucle
-        // (porque la consigna dice que -p va siempre al final)
+        
         if (strcmp(argv[i], "-p") == 0) {
             hayParam=1;
             break; 
@@ -489,16 +488,15 @@ int main(int argc, char *argv[]){
         nombreArchivoVMI = argv[indiceVMI];
     }
 
-    
+    FILE *archExe=NULL;
     if(indiceVMX != -1) {
         // Si el usuario pasó un archivo .vmx, lo abrimos para lectura binaria
         // y ejecutamos el código dentro de él.
-        FILE *archExe = fopen(argv[indiceVMX], "rb");
+        archExe = fopen(argv[indiceVMX], "rb");
         if (!archExe) {
             printf("Error: No se pudo abrir el archivo %s\n", argv[indiceVMX]);
             return 1;
         }
-        fclose(archExe);
     }
     
 
@@ -558,9 +556,13 @@ int main(int argc, char *argv[]){
             }
 
             fread(id_version, sizeof(uint8_t), 6, archExe);
+            
+
             uint8_t version=validarID_VERSION(id_version);
+            
             if(version){
                 if(version==1){
+                    
                     uint8_t tamSegmentos[TAM_VERSION1];//el vector almacena los bytes de tamaño del CS
                     fread(tamSegmentos, sizeof(uint8_t), TAM_VERSION1, archExe);
                     tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
@@ -596,7 +598,7 @@ int main(int argc, char *argv[]){
 
                         //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                         regTabla[0]+=tamInstruccion(instruccion);
-
+                        
                         //Ejecuto la instruccion
                         codIns=instruccion & 0x1F;
 
