@@ -106,7 +106,7 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
 
     uint8_t posTabla=0; //posicion en tabla de descriptores
    
-
+    
     if(tamParam!=0){ //PS
         registros[31]=0x00000000;
         posTabla++;
@@ -119,7 +119,7 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
         posTabla++;
     }
     else
-        registros[31]=0xFFFFFFFF;
+        registros[30]=0xFFFFFFFF;
     registros[26]=posTabla<<16; //CS
     posTabla++;
     if(tamData!=0){//DS
@@ -360,8 +360,8 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
 
     // 2. Construir el vector de palabras (char**) internamente
     int cantPalabras = 0;
-    cantPalabras+=indiceVMI!=0;
-    cantPalabras+=indiceVMX!=0;
+    cantPalabras+=indiceVMI!=-1;
+    cantPalabras+=indiceVMX!=-1;
 
     cantPalabras += (*argc - indiceParam);
 
@@ -581,7 +581,7 @@ int main(int argc, char *argv[]){
             if(hayParam)
                 //OJO QUE LUEGO DE EJECUTAR ESTA FUNCION EL ARGC ES LA CANT DE PALABRAS DEL PARAM SEGMENT
                 vecParam=crearVecParam(&argc,argv,&tamParam,indiceVMX,indiceVMI);
-
+           
             fread(id_version, sizeof(uint8_t), 6, archExe);
             
 
@@ -676,8 +676,11 @@ int main(int argc, char *argv[]){
                     uint8_t vecConst[tamConst];
                     fread(vecConst, sizeof(uint8_t), tamConst, archExe);
                     iniciarTablaSegmentos2(segTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,tamParam);
-                    iniciarRegistros2(regTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam);
                     
+                    iniciarRegistros2(regTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam);
+                    printf("Cantidad de parametros %d \n",argc);
+                    printf("TamParam: %d \n",tamParam);
+                    printf(" PS %X",regTabla[31]);
                     uint32_t direcFisicaCodigo = 0;
                     if(tamParam!=0){
                         agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecParam,tamParam);
@@ -697,7 +700,7 @@ int main(int argc, char *argv[]){
                     }
                     //Inicio la pila en la memoria principal.
                     inicializarSubrutinaPrincipal(argc,tamParam,regTabla,memoriaPrincipal,segTabla);
-                     
+                    
                     
                     if (condDissasembler) {
                         uint32_t direcFisicaCodigo = (hayParam == 0) ? 0 : tamParam;
@@ -716,6 +719,9 @@ int main(int argc, char *argv[]){
                         }
                         printf("\n> DISASSEMBLER - FIN <\n");
                     }
+                    
+
+
                     
                     while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
                         /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
@@ -748,6 +754,7 @@ int main(int argc, char *argv[]){
                                 }
                             
                     }
+                    
 
                 }
             }else
