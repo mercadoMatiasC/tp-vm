@@ -32,7 +32,7 @@ uint32_t* valorOpGenerico(uint32_t regOp, uint8_t memoriaPrincipal[], regSegment
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2);
 void mostrarCC(uint32_t regTabla[]);
 
-void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[],uint16_t posicion,uint8_t vecSeg[],uint16_t tamSeg);
+void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[],uint32_t posicion,uint8_t vecSeg[],uint16_t tamSeg);
 uint8_t* crearVecParam(int *argc, char *argv[],uint16_t *tamParam,char indiceVMX,char indiceVMI);
 //IMPLEMENTACIONES
 int validarID_VERSION(uint8_t cabecera[]){
@@ -340,7 +340,7 @@ void mostrarCC(uint32_t regTabla[]){
     );
 }
 
-void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[], uint16_t posicion, uint8_t vecSeg[], uint16_t tamSeg) {
+void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[], uint32_t posicion, uint8_t vecSeg[], uint16_t tamSeg) {
     for (int i = 0; i < tamSeg; i++) {
         memoriaPrincipal[posicion + i] = vecSeg[i];
     }
@@ -677,7 +677,28 @@ int main(int argc, char *argv[]){
                     fread(vecConst, sizeof(uint8_t), tamConst, archExe);
                     iniciarTablaSegmentos2(segTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,tamParam);
                     iniciarRegistros2(regTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam);
+                    
+                    uint32_t direcFisicaCodigo = 0;
+                    if(tamParam!=0){
+                        agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecParam,tamParam);
+                        direcFisicaCodigo+=tamParam;
+                    }
+                    if(tamConst!=0){
+                        agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecConst,tamConst);
+                        direcFisicaCodigo+=tamConst;
+                    }
+                    agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecCodigo,tamCodigo);
+                    direcFisicaCodigo+=tamCodigo;
+                    if(tamData!=0){
+                        direcFisicaCodigo+=tamData; //guardo el espacio en memoria del Data segment
+                    }
+                    if(tamExtra!=0){
+                        direcFisicaCodigo+=tamExtra; //guardo el espacio en memoria del Extra segment
+                    }
+                    //Inicio la pila en la memoria principal.
                     inicializarSubrutinaPrincipal(argc,tamParam,regTabla,memoriaPrincipal,segTabla);
+
+
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
