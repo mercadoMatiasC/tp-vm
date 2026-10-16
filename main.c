@@ -33,7 +33,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
 void mostrarCC(uint32_t regTabla[]);
 
 void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[],uint16_t posicion,uint8_t vecSeg[],uint16_t tamSeg);
-uint8_t* crearVecParam(int argc, char *argv[],uint16_t *tamParam,char indiceVMX,char indiceVMI);
+uint8_t* crearVecParam(int *argc, char *argv[],uint16_t *tamParam,char indiceVMX,char indiceVMI);
 //IMPLEMENTACIONES
 int validarID_VERSION(uint8_t cabecera[]){
     char id[6];
@@ -136,7 +136,7 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
         registros[28]=0xFFFFFFFF;
     registros[29]=posTabla<<16;//SS
 
-    registros[7]=registros[29]+tamStack;//Inicializo el registro SP
+    registros[7]=registros[29]+(tamStack&0xFFFF);//Inicializo el registro SP
     registros[0]=(registros[26]&0xFFFF0000) | (offsetEntry&0xFFFF);
 
 
@@ -346,12 +346,12 @@ void agregarSegmentoEnMemoria(uint8_t memoriaPrincipal[], uint16_t posicion, uin
     }
 }
 
-uint8_t* crearVecParam(int argc, char *argv[], uint16_t *tamParam, char indiceVMX, char indiceVMI) {
+uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceVMX, char indiceVMI) {
     int i;
     int indiceParam = -1;
 
     // 1. Buscar en argv dónde arranca la opción -p
-    for (i = 0; i < argc; ++i) {
+    for (i = 0; i < *argc; ++i) {
         if (strcmp(argv[i], "-p") == 0) {
             indiceParam = i + 1;//A partir de aca comienzan los parametros que no vmx ni vmi
             break;
@@ -363,10 +363,11 @@ uint8_t* crearVecParam(int argc, char *argv[], uint16_t *tamParam, char indiceVM
     cantPalabras+=indiceVMI!=0;
     cantPalabras+=indiceVMX!=0;
 
-    cantPalabras += (argc - indiceParam);
+    cantPalabras += (*argc - indiceParam);
 
     if (cantPalabras == 0) {
         *tamParam = 0;
+        *argc=0;
         return NULL;
     }
 
@@ -382,8 +383,8 @@ uint8_t* crearVecParam(int argc, char *argv[], uint16_t *tamParam, char indiceVM
     }
 
     // Cargar las palabras tras el flag -p
-    if (indiceParam != -1 && indiceParam < argc) {
-        for (i = indiceParam; i < argc; ++i) {
+    if (indiceParam != -1 && indiceParam < *argc) {
+        for (i = indiceParam; i < *argc; ++i) {
             vecPalabras[posPalabra++] = argv[i];
         }
     }
@@ -436,8 +437,39 @@ uint8_t* crearVecParam(int argc, char *argv[], uint16_t *tamParam, char indiceVM
     free(vecAuxOffsets);
 
     *tamParam = tamTotal;
+    *argc=cantPalabras;
     return vecParam;
 }
+void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[],uint8_t memoriaPrincipal[],regSegmento segTabla[]){
+    uint32_t direcLogica= (regTabla[7] & 0xFFFF0000) | (uint16_t)( (( regTabla[7] & 0xFFFF) -4)&0xFFFF);//direcLogica que almacena el (SP), como 
+                                                                              //Como el SP en un inicio apunta por fuera del SS, le restamos 4 para iniciar la pila 
+
+   
+    //Guardamos el *argv en la pila (consultar bien que seria por que no se armarlo)
+    if(tamParam==0){
+        escribirMemoria(direcLogica,0xFFFFFFFF,regTabla,segTabla,memoriaPrincipal,4);//Guardo el argv cuando no hay param.
+        regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar argc
+        escribirMemoria(direcLogica, 0x00000000,regTabla, segTabla, memoriaPrincipal, 4);//Escribo argc=0
+    }
+    else{
+        escribirMemoria(direcLogica, 0xFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo *argv cuando hay param.
+        regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar argc
+        escribirMemoria(direcLogica, argc,regTabla, segTabla, memoriaPrincipal, 4);//Escribo argc
+    }
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar el RET
+    //Al ser la subrutina principal, el ret sera 0xFFFFFFFF, por lo que al ejecutar la instruccion RET, el programa se detendra
+    escribirMemoria(direcLogica, 0xFFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo el RET
+    //Y ahora el SP queda apuntando al RET 
+}
+
+
+
+
+
+     
+
+
+
 
 int main(int argc, char *argv[]){
     int condDissasembler=0;
@@ -547,7 +579,8 @@ int main(int argc, char *argv[]){
 
         if(archExe){//Recibe un .vmx
             if(hayParam)
-                vecParam=crearVecParam(argc,argv,&tamParam,indiceVMX,indiceVMI);
+                //OJO QUE LUEGO DE EJECUTAR ESTA FUNCION EL ARGC ES LA CANT DE PALABRAS DEL PARAM SEGMENT
+                vecParam=crearVecParam(&argc,argv,&tamParam,indiceVMX,indiceVMI);
 
             fread(id_version, sizeof(uint8_t), 6, archExe);
             
@@ -641,6 +674,10 @@ int main(int argc, char *argv[]){
                     fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
 
                     uint8_t vecConst[tamConst];
+                    fread(vecConst, sizeof(uint8_t), tamConst, archExe);
+                    iniciarTablaSegmentos2(segTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,tamParam);
+                    iniciarRegistros2(regTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam);
+                    inicializarSubrutinaPrincipal(argc,tamParam,regTabla,memoriaPrincipal,segTabla);
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
