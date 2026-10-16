@@ -575,7 +575,7 @@ int main(int argc, char *argv[]){
                         iniciarTablaSegmentos2(segTabla,tamCodigo,0,0,0,0,tamParam);
                         iniciarRegistros2(regTabla,tamCodigo,0,0,0,0,0,tamParam);
                     }
-
+                    
                     if (condDissasembler) {
                         uint32_t direcFisicaCodigo = (hayParam == 0) ? 0 : tamParam;
                         uint32_t cursor = direcFisicaCodigo;
@@ -593,7 +593,7 @@ int main(int argc, char *argv[]){
                         }
                         printf("\n> DISASSEMBLER - FIN <\n");
                     }
-
+                    
                     while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
                         /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
                         por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
@@ -623,6 +623,7 @@ int main(int argc, char *argv[]){
                                     printf("\nERROR: Instruccion invalida");
                                     exit(1); //termina de forma abrupta la ejecucion del programa
                                 }
+                            
                     }
                 }
                 else{//version2
