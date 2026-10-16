@@ -378,7 +378,7 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
     // Cargar el nombre del ejecutable (.vmx o .vmi)
     if (indiceVMX != -1) {
         vecPalabras[posPalabra++] = argv[(int)indiceVMX];
-    } else if (indiceVMI != -1) {
+    }if (indiceVMI != -1) {
         vecPalabras[posPalabra++] = argv[(int)indiceVMI];
     }
 
@@ -581,7 +581,7 @@ int main(int argc, char *argv[]){
             if(hayParam)
                 //OJO QUE LUEGO DE EJECUTAR ESTA FUNCION EL ARGC ES LA CANT DE PALABRAS DEL PARAM SEGMENT
                 vecParam=crearVecParam(&argc,argv,&tamParam,indiceVMX,indiceVMI);
-           
+            
             fread(id_version, sizeof(uint8_t), 6, archExe);
             
 
