@@ -563,6 +563,34 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
         }else
             if(valor==0) //SYSx0 - CLEAR SCREEN
                 printf("\033[H\033[J");
+            else
+                if(valor==4){//WRITE DE CADENA
+                    cantBytes=1;//Como son caracteres, escribimos siempre de a 1 byte
+                    //EDX apunta a la direc inicial de la cadena
+                    direcLogica=regTabla[13];
+                    dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
+                    int i=0;
+                    uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
+                    printf("[%04X]: ", direcFisica);//Imprime en donde esta guardada la cadena
+                    while(dato!=0){ // \0 vale 0 y es el caracter de fin de cadena
+
+                        uint8_t caracter;
+                        caracter = dato & 0xFF; 
+                            if (caracter >= 32 && caracter <= 126)
+                                printf("%c", (char)caracter);
+                            else 
+                                if(caracter==10)//Si es un salto de linea, lo imprimimos
+                                    printf("\n");
+                                else
+                                    printf(".");
+                        ++i;
+                        direcLogica = regTabla[13] + cantBytes * i; //EDX apuntando a la direc inicial + corrimiento
+                        // Leemos el valor de la memoria usando la dirección lógica
+                        dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
+                    }   
+                    
+                }
+
 }
 
 void  jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {

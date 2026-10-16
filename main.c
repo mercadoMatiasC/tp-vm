@@ -697,7 +697,57 @@ int main(int argc, char *argv[]){
                     }
                     //Inicio la pila en la memoria principal.
                     inicializarSubrutinaPrincipal(argc,tamParam,regTabla,memoriaPrincipal,segTabla);
+                     
+                    
+                    if (condDissasembler) {
+                        uint32_t direcFisicaCodigo = (hayParam == 0) ? 0 : tamParam;
+                        uint32_t cursor = direcFisicaCodigo;
+                        uint32_t limite = direcFisicaCodigo + tamCodigo;
 
+                        printf("\n> DISASSEMBLER - INICIO <");
+                        while (cursor < limite) {
+                            uint8_t instruccion = memoriaPrincipal[cursor];
+                            uint32_t regTablaAux[4] = {0};
+                            
+                            asignoRegsOperar(regTablaAux, instruccion, memoriaPrincipal, cursor);
+                            disassembler(instruccion, cursor, regTablaAux[2], regTablaAux[3]);
+                            
+                            cursor += tamInstruccion(instruccion);
+                        }
+                        printf("\n> DISASSEMBLER - FIN <\n");
+                    }
+                    
+                    while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
+                        /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
+                        por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
+                        direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla,1);
+                        instruccion=memoriaPrincipal[direcFisicaIns];
+
+                        //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
+                        asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
+
+                        //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
+                        regTabla[0]+=tamInstruccion(instruccion);
+                        
+                        //Ejecuto la instruccion
+                        codIns=instruccion & 0x1F;
+
+                        if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
+                            codOp1=(regTabla[2]>>24)&0x000000FF;
+
+                            ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
+                        }else
+                            if(codIns>=0x00 && codIns<=0x0A)
+                                ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+                            else
+                                if(codIns==0x0F)
+                                    ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
+                                else{
+                                    printf("\nERROR: Instruccion invalida");
+                                    exit(1); //termina de forma abrupta la ejecucion del programa
+                                }
+                            
+                    }
 
                 }
             }else
