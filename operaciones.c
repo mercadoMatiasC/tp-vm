@@ -467,13 +467,13 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 
             // Leemos el valor de la memoria usando la dirección lógica
             dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
-
+            
             uint8_t formatoDecimal  = (regTabla[10] >> 0) & 0x01; // Bit 0
             uint8_t formatoCaracter = (regTabla[10] >> 1) & 0x01; // Bit 1
             uint8_t formatoOctal    = (regTabla[10] >> 2) & 0x01; // Bit 2
             uint8_t formatoHexa     = (regTabla[10] >> 3) & 0x01; // Bit 3
             uint8_t formatoBinario  = (regTabla[10] >> 4) & 0x01; // Bit 4
-
+            
             uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
             printf("[%04X]: ", direcFisica);
             if(formatoBinario==1){
@@ -498,6 +498,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                     
                 }
             }
+        
             if(formatoDecimal == 1){
                 printf(" %d ",dato);
             }
@@ -534,32 +535,21 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
             if(valor==0x0F){
                     // 1. Verificás si hay un archivo de imagen .vmi definido (por ejemplo, en una variable global o pasada por parámetro)
                     if (nombreArchivoVMI != NULL) {
+                        
                         // 2. Generás la imagen con el estado actual completo de la VM (Cabecera, Registros, Tabla de Segmentos y Memoria)
                         guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
                         printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
+                        char res;
+                        printf("Ingrese res: \n");
+                        scanf(" %c",&res);
+                        if(res=='q')
+                            exit(1);
+                        
+                                
+                        //Faltaria implementar la del enter con variable global
                     } 
-
-                    /*// 3. Quedar a la espera de la acción de depuración del usuario (Debug prompt)
-                    char comando[10];
-                    while (1) {
-                        printf("vmg> "); // o el prompt de debug que prefieras
-                        if (fgets(comando, sizeof(comando), stdin) != NULL) {
-                            // Si presiona Enter (solo '\n'), ejecuta la siguiente instrucción y vuelve a frenar
-                            if (comando[0] == '\n') {
-                                // Aquí puedes activar un flag de "paso a paso" (step-by-step) para la VM
-                                break; 
-                            }
-                            // Si ingresa 'g' (go), continúa la ejecución normal hasta el próximo breakpoint o fin
-                            else if (comando[0] == 'g' || comando[0] == 'G') {
-                                break;
-                            }
-                            // Si ingresa 'q' (quit), aborta la ejecución dejando intacto el .vmi
-                            else if (comando[0] == 'q' || comando[0] == 'Q') {
-                                printf("Abortando ejecucion por el usuario.\n");
-                                exit(0); 
-                            }
-                        }
-                    }*/
+                    
+                    
         }else
             if(valor==0) //SYSx0 - CLEAR SCREEN
                 printf("\033[H\033[J");
@@ -876,4 +866,23 @@ void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
         printf("ERROR: Argumento invalido");
         exit(1);
     }
+}
+
+void call(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    
+    regTabla[7] = (regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF) - 4) & 0xFFFF);//Actualizo el SP para guardar el RET                                                             
+    escribirMemoria(regTabla[7],regTabla[0],regTabla,segTabla,memoriaPrincipal,4);
+    
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = (regTabla[26]&0xFFFF0000) | (0xFFFF&offset);//sumamos CS + offset
+    regTabla[0]=direcLogica;
+}
+void ret(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t direcLogica= regTabla[7];//direcLogica que almacena el (SP)
+    
+    // Leemos lo que hay en la pila
+    uint32_t direccionRetorno = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
+   
+    regTabla[0]=leerMemoria(direcLogica,regTabla,segTabla,memoriaPrincipal,4);//Recupero el RET y actualizo IP
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
 }

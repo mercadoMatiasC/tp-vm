@@ -463,7 +463,7 @@ void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[
     direcLogica=regTabla[7];
     escribirMemoria(direcLogica, 0xFFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo el RET
     //Y ahora el SP queda apuntando al RET 
-    printf("SP: %X\n",regTabla[7]);
+    
 }
 
 
@@ -740,21 +740,24 @@ int main(int argc, char *argv[]){
                         
                         //Ejecuto la instruccion
                         codIns=instruccion & 0x1F;
-                        printf("%X \n",codIns);
+                        
                         if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                             codOp1=(regTabla[2]>>24)&0x000000FF;
 
                             ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                         }else
-                            if(codIns>=0x00 && codIns<=0x0E)
+                            if(codIns>=0x00 && codIns<=0x0D)
+                              
                                 ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
                             else
-                                if(codIns==0x0F)
+                                if(codIns==0x0F || codIns==0x0E){
+                                    
                                     ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
-                                else{
+                                }else{
                                     printf("\nERROR: Instruccion invalida %X",codIns);
                                     exit(1); //termina de forma abrupta la ejecucion del programa
                                 }
+                            
                             
                     }
                     
