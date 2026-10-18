@@ -449,15 +449,18 @@ void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[
     if(tamParam==0){
         escribirMemoria(direcLogica,0xFFFFFFFF,regTabla,segTabla,memoriaPrincipal,4);//Guardo el argv cuando no hay param.
         regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar argc
+        direcLogica=regTabla[7];
         escribirMemoria(direcLogica, 0x00000000,regTabla, segTabla, memoriaPrincipal, 4);//Escribo argc=0
     }
     else{
-        escribirMemoria(direcLogica, 0xFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo *argv cuando hay param.
+        escribirMemoria(direcLogica, 0xFFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo *argv cuando hay param.
         regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar argc
+        direcLogica=regTabla[7];
         escribirMemoria(direcLogica, argc,regTabla, segTabla, memoriaPrincipal, 4);//Escribo argc
     }
     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar el RET
     //Al ser la subrutina principal, el ret sera 0xFFFFFFFF, por lo que al ejecutar la instruccion RET, el programa se detendra
+    direcLogica=regTabla[7];
     escribirMemoria(direcLogica, 0xFFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo el RET
     //Y ahora el SP queda apuntando al RET 
 }
@@ -541,10 +544,10 @@ int main(int argc, char *argv[]){
             (inst)jnz,  //09
             (inst)Not,  //0A
 
-            (inst)nada, //0B
-            (inst)nada, //0C
-            (inst)nada, //0D
-            (inst)nada, //0E
+            (inst)nada, //0B push
+            (inst)nada, //0C pop
+            (inst)call, //0D call
+            (inst)ret, //0E ret
             (inst)stop, //0F
 
             (inst)mov,  //10
@@ -653,7 +656,7 @@ int main(int argc, char *argv[]){
                                 if(codIns==0x0F)
                                     ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
                                 else{
-                                    printf("\nERROR: Instruccion invalida");
+                                    printf("\nERROR: Instruccion invalida codIns: %X",codIns);
                                     exit(1); //termina de forma abrupta la ejecucion del programa
                                 }
                             
@@ -678,9 +681,7 @@ int main(int argc, char *argv[]){
                     iniciarTablaSegmentos2(segTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,tamParam);
                     
                     iniciarRegistros2(regTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam);
-                    printf("Cantidad de parametros %d \n",argc);
-                    printf("TamParam: %d \n",tamParam);
-                    printf(" PS %X",regTabla[31]);
+                   
                     uint32_t direcFisicaCodigo = 0;
                     if(tamParam!=0){
                         agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecParam,tamParam);
@@ -724,6 +725,7 @@ int main(int argc, char *argv[]){
 
                     
                     while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
+                        
                         /*Como IP es un puntero a memoria, tiene en sus 16 bits significativos el codSeg y en el resto un offset
                         por lo que debemos convertir la direccion logica que almacena a una fisica para usarla en el vector de memoria*/
                         direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla,1);
@@ -737,19 +739,19 @@ int main(int argc, char *argv[]){
                         
                         //Ejecuto la instruccion
                         codIns=instruccion & 0x1F;
-
+                        printf("%X \n",codIns);
                         if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
                             codOp1=(regTabla[2]>>24)&0x000000FF;
 
                             ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
                         }else
-                            if(codIns>=0x00 && codIns<=0x0A)
+                            if(codIns>=0x00 && codIns<=0x0E)
                                 ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
                             else
                                 if(codIns==0x0F)
                                     ((void (*)(uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla, segTabla, memoriaPrincipal);
                                 else{
-                                    printf("\nERROR: Instruccion invalida");
+                                    printf("\nERROR: Instruccion invalida %X",codIns);
                                     exit(1); //termina de forma abrupta la ejecucion del programa
                                 }
                             
