@@ -443,7 +443,7 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
 void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[],uint8_t memoriaPrincipal[],regSegmento segTabla[]){
     uint32_t direcLogica= (regTabla[7] & 0xFFFF0000) | (uint16_t)( (( regTabla[7] & 0xFFFF) -4)&0xFFFF);//direcLogica que almacena el (SP), como 
                                                                               //Como el SP en un inicio apunta por fuera del SS, le restamos 4 para iniciar la pila 
-
+     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar *argv
    
     //Guardamos el *argv en la pila (consultar bien que seria por que no se armarlo)
     if(tamParam==0){
@@ -463,6 +463,7 @@ void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[
     direcLogica=regTabla[7];
     escribirMemoria(direcLogica, 0xFFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo el RET
     //Y ahora el SP queda apuntando al RET 
+    printf("SP: %X\n",regTabla[7]);
 }
 
 
@@ -671,7 +672,7 @@ int main(int argc, char *argv[]){
                     tamStack=((uint16_t)tamSegmentos[6]<<8) | tamSegmentos[7];
                     tamConst=((uint16_t)tamSegmentos[8]<<8) | tamSegmentos[9];
                     offsetEntry=((uint16_t)tamSegmentos[10]<<8) | tamSegmentos[11];
-
+                    
                     uint8_t vecCodigo[tamCodigo];
 
                     fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
