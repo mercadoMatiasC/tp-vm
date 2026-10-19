@@ -162,42 +162,153 @@ void escribirMemoria(uint32_t direcLogica, uint32_t valor, uint32_t regTabla[], 
     }
     regTabla[6]=valor; //modifico el registro MBR
 }
-
 uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint8_t codOp = (regOp >> 24) & 0x000000FF;
     uint32_t codReg = regOp & 0x0000001F;
-    
+    uint32_t valor = 0;
+
+    if (codOp == 1) { // Registro
+        uint8_t Sector = (regOp >> 5) & 0x3; // Obtengo el bit 5 y 6 que indican el sector
+        switch (Sector) {
+            case 0x00: // 4 bytes completos
+                valor = regTabla[codReg];
+                break;
+            case 0x01: // Cuarto byte del registro (con extensión de signo)
+                valor = (uint32_t)(int32_t)(int8_t)(regTabla[codReg] & 0x000000FF);
+                break;
+            case 0x02: // Tercer byte del registro (con extensión de signo)
+                valor = (uint32_t)(int32_t)(int8_t)((regTabla[codReg] >> 8) & 0x000000FF);
+                break;
+            case 0x03: // Los 2 bytes menos significativos (Word bajo, con extensión de signo)
+                valor = (uint32_t)(int32_t)(int16_t)(regTabla[codReg] & 0x0000FFFF);
+                break;
+            default:
+                valor = regTabla[codReg];
+                break;
+        }
+        return valor;
+    }
+    else if (codOp == 2) { // Inmediato (16 bits con extensión de signo a 32 bits)
+        return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF);
+    }
+    else { // Memoria (codOp == 3)
+        int16_t offset = (regOp >> 8) & 0x0000FFFF;
+        uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
+        
+        // Leemos 4 bytes base de la memoria principal
+        valor = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 4);
+        
+        uint8_t cantBytes = (regOp >> 5) & 0x7; // Cantidad de bytes a filtrar
+        switch(cantBytes) {
+            case 0x01: // Byte más significativo del valor leído
+                valor = (uint32_t)(int32_t)(int8_t)(valor >> 24);
+                break;
+            case 0x02: // 2 bytes más significativos del valor leído
+                valor = (uint32_t)(int32_t)(int16_t)(valor >> 16);
+                break;
+            case 0x04: // 4 bytes completos
+                break;
+            default:
+                break;
+        }
+        return valor;
+    }
+}
+/*uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint8_t codOp = (regOp >> 24) & 0x000000FF;
+    uint32_t codReg = regOp & 0x0000001F;
+    uint32_t valor;
     if (codOp == 1) {
-        return regTabla[codReg];
+        
+        return  valor=regTabla[codReg];
+       
+
     }else
-        if (codOp == 2)
+        if (codOp == 2)//inmediato
             // Al castear primero a int16_t y luego a int32_t/uint32_t, 0xFFFF pasa a ser 0xFFFFFFFF (-1)
             return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF);
         else {
             int16_t offset = (regOp >> 8) & 0x0000FFFF;
             uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
+           
             
            //Sumar offset no con registro sino con los 2 bytes menos significativos y despues conectarlo con los 2 bytes mas significativos del registro codReg
-           
-           return leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
+           valor=leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);        
+           return valor;
         }
 }
+        */
 
+void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
+    uint8_t codOp = (regOp >> 24) & 0x000000FF;
+    uint32_t codReg = regOp & 0x0000001F;
+
+    if (codOp == 1) { // Escritura en Registro
+        uint8_t Sector = (regOp >> 5) & 0x3; // Sector del registro
+        switch (Sector) {
+            case 0x00: { // 4 bytes completos
+                regTabla[codReg] = valor;
+                break;
+            }
+            case 0x01: { // Cuarto byte del registro
+                uint32_t v = (uint32_t)(int32_t)(int8_t)(valor & 0x000000FF);
+                regTabla[codReg] = (regTabla[codReg] & 0xFFFFFF00) | (v & 0x000000FF);
+                break;
+            }
+            case 0x02: { // Tercer byte del registro
+                uint32_t v = (uint32_t)(int32_t)(int8_t)(valor & 0x000000FF);
+                regTabla[codReg] = (regTabla[codReg] & 0xFFFF00FF) | ((v & 0x000000FF) << 8);
+                break;
+            }
+            case 0x03: { // 2 bytes menos significativos
+                uint32_t v = (uint32_t)(int32_t)(int16_t)(valor & 0x0000FFFF);
+                regTabla[codReg] = (regTabla[codReg] & 0xFFFF0000) | (v & 0x0000FFFF);
+                break;
+            }
+            default:
+                break;
+        }
+    } 
+    else{//Escritura en Memoria (codOp == 3)
+        uint8_t cantBytes = (regOp >> 5) & 0x7; // Máscara de 3 bits para capturar 001, 010 o 100
+        int16_t offset = (regOp >> 8) & 0x0000FFFF;
+        uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
+       
+        uint8_t nBytes = 4;
+        if (cantBytes == 0x01) {      // 001 binario (1 byte)
+            nBytes = 1;
+        } else if (cantBytes == 0x02) { // 010 binario (2 bytes)
+            nBytes = 2;
+        } else if (cantBytes == 0x04) { // 100 binario (4 bytes)
+            nBytes = 4;
+        }
+
+        escribirMemoria(direcLogica, valor, regTabla, segTabla, memoriaPrincipal, nBytes);
+    }
+}
+
+
+/*
 void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint8_t codOp=(regOp>>24)&0x000000FF;
     uint32_t codReg = regOp & 0x0000001F;
 
     if(codOp==1){
+        
+        uint8_t Sector=(regOp>>5)&0x3; //Obtengo el bit 5 y 6 que me indica el sector del registro
+        
         regTabla[codReg]=valor;
-    }
-    else{
+        
+    }else{
+        
         int16_t offset = (regOp >> 8) & 0x0000FFFF;
         uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-        
+       
         escribirMemoria(direcLogica,valor,regTabla,segTabla,memoriaPrincipal,4);
+        
     }
 }
-
+    */
 void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t resultado, int tipo) {
     uint32_t res32 = (uint32_t)resultado;
     int32_t  res32_signed = (int32_t)res32;
@@ -356,13 +467,13 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 
             // Leemos el valor de la memoria usando la dirección lógica
             dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
-
+            
             uint8_t formatoDecimal  = (regTabla[10] >> 0) & 0x01; // Bit 0
             uint8_t formatoCaracter = (regTabla[10] >> 1) & 0x01; // Bit 1
             uint8_t formatoOctal    = (regTabla[10] >> 2) & 0x01; // Bit 2
             uint8_t formatoHexa     = (regTabla[10] >> 3) & 0x01; // Bit 3
             uint8_t formatoBinario  = (regTabla[10] >> 4) & 0x01; // Bit 4
-
+            
             uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
             printf("[%04X]: ", direcFisica);
             if(formatoBinario==1){
@@ -387,6 +498,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                     
                 }
             }
+        
             if(formatoDecimal == 1){
                 printf(" %d ",dato);
             }
@@ -423,35 +535,52 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
             if(valor==0x0F){
                     // 1. Verificás si hay un archivo de imagen .vmi definido (por ejemplo, en una variable global o pasada por parámetro)
                     if (nombreArchivoVMI != NULL) {
+                        
                         // 2. Generás la imagen con el estado actual completo de la VM (Cabecera, Registros, Tabla de Segmentos y Memoria)
                         guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
                         printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
+                        char res;
+                        printf("Ingrese res: \n");
+                        scanf(" %c",&res);
+                        if(res=='q')
+                            exit(1);
+                        
+                                
+                        //Faltaria implementar la del enter con variable global
                     } 
-
-                    /*// 3. Quedar a la espera de la acción de depuración del usuario (Debug prompt)
-                    char comando[10];
-                    while (1) {
-                        printf("vmg> "); // o el prompt de debug que prefieras
-                        if (fgets(comando, sizeof(comando), stdin) != NULL) {
-                            // Si presiona Enter (solo '\n'), ejecuta la siguiente instrucción y vuelve a frenar
-                            if (comando[0] == '\n') {
-                                // Aquí puedes activar un flag de "paso a paso" (step-by-step) para la VM
-                                break; 
-                            }
-                            // Si ingresa 'g' (go), continúa la ejecución normal hasta el próximo breakpoint o fin
-                            else if (comando[0] == 'g' || comando[0] == 'G') {
-                                break;
-                            }
-                            // Si ingresa 'q' (quit), aborta la ejecución dejando intacto el .vmi
-                            else if (comando[0] == 'q' || comando[0] == 'Q') {
-                                printf("Abortando ejecucion por el usuario.\n");
-                                exit(0); 
-                            }
-                        }
-                    }*/
+                    
+                    
         }else
             if(valor==0) //SYSx0 - CLEAR SCREEN
                 printf("\033[H\033[J");
+            else
+                if(valor==4){//WRITE DE CADENA
+                    cantBytes=1;//Como son caracteres, escribimos siempre de a 1 byte
+                    //EDX apunta a la direc inicial de la cadena
+                    direcLogica=regTabla[13];
+                    dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
+                    int i=0;
+                    uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
+                    printf("[%04X]: ", direcFisica);//Imprime en donde esta guardada la cadena
+                    while(dato!=0){ // \0 vale 0 y es el caracter de fin de cadena
+
+                        uint8_t caracter;
+                        caracter = dato & 0xFF; 
+                            if (caracter >= 32 && caracter <= 126)
+                                printf("%c", (char)caracter);
+                            else 
+                                if(caracter==10)//Si es un salto de linea, lo imprimimos
+                                    printf("\n");
+                                else
+                                    printf(".");
+                        ++i;
+                        direcLogica = regTabla[13] + cantBytes * i; //EDX apuntando a la direc inicial + corrimiento
+                        // Leemos el valor de la memoria usando la dirección lógica
+                        dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
+                    }   
+                    
+                }
+
 }
 
 void  jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
@@ -633,7 +762,7 @@ void  And(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
     uint32_t resultado = valor1 & valor2;
 
-    printf("\nRESULTADO: %u", resultado);
+   
 
     escribeOperando(reg1, resultado, regTabla, segTabla, memoriaPrincipal);
 
@@ -738,3 +867,34 @@ void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
         exit(1);
     }
 }
+
+void call(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    
+    regTabla[7] = (regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF) - 4) & 0xFFFF);//Actualizo el SP para guardar el RET                                                             
+    escribirMemoria(regTabla[7],regTabla[0],regTabla,segTabla,memoriaPrincipal,4);
+    
+    uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
+    uint32_t direcLogica = (regTabla[26]&0xFFFF0000) | (0xFFFF&offset);//sumamos CS + offset
+    regTabla[0]=direcLogica;
+}
+void ret(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t direcLogica= regTabla[7];//direcLogica que almacena el (SP)
+    
+    // Leemos lo que hay en la pila
+    uint32_t direccionRetorno = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
+   
+    regTabla[0]=leerMemoria(direcLogica,regTabla,segTabla,memoriaPrincipal,4);//Recupero el RET y actualizo IP
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
+}
+void pop(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor=leerMemoria(regTabla[7],regTabla,segTabla,memoriaPrincipal,4);
+    escribeOperando(reg1,valor,regTabla,segTabla,memoriaPrincipal);
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
+}
+void push(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor=leerOperando(reg1,regTabla,segTabla,memoriaPrincipal);
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo SP
+
+    escribirMemoria(regTabla[7],valor,regTabla,segTabla,memoriaPrincipal,4);
+}    
+    
