@@ -886,3 +886,15 @@ void ret(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]
     regTabla[0]=leerMemoria(direcLogica,regTabla,segTabla,memoriaPrincipal,4);//Recupero el RET y actualizo IP
     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
 }
+void pop(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor=leerMemoria(regTabla[7],regTabla,segTabla,memoriaPrincipal,4);
+    escribeOperando(reg1,valor,regTabla,segTabla,memoriaPrincipal);
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
+}
+void push(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint32_t valor=leerOperando(reg1,regTabla,segTabla,memoriaPrincipal);
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo SP
+
+    escribirMemoria(regTabla[7],valor,regTabla,segTabla,memoriaPrincipal,4);
+}    
+    

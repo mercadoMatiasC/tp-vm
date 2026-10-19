@@ -545,8 +545,8 @@ int main(int argc, char *argv[]){
             (inst)jnz,  //09
             (inst)Not,  //0A
 
-            (inst)nada, //0B push
-            (inst)nada, //0C pop
+            (inst)push, //0B push
+            (inst)pop, //0C pop
             (inst)call, //0D call
             (inst)ret, //0E ret
             (inst)stop, //0F
