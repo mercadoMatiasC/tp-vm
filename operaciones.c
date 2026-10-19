@@ -579,8 +579,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                         dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
                     }
 
-                }else{
-                    if(valor == 3){//READ String
+                }else if(valor == 3){//READ String
                         cantBytes = 1;//Leemos de a caracter
                         int contEscrito = 0;
                         direcLogica = regTabla[13]; //EDX tiene la dir lógica
@@ -594,8 +593,8 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                             }
                         }
                         escribirMemoria(direcLogica + contEscrito, 0, regTabla, segTabla, memoriaPrincipal, cantBytes); // Escribimos el terminador de cadena
+
                     }
-                }
 }
 
 void  jmp(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
