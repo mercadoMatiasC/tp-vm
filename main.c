@@ -584,8 +584,13 @@ int main(int argc, char *argv[]){
             (inst)rnd   //1F
         };
 
+<<<<<<< HEAD
         uint8_t memoriaPrincipal[tamMemoria];
         uint8_t id_version[TAM_ID_VERSION];
+=======
+        uint8_t memoriaPrincipal[TAM_RAM] = {0};
+        uint8_t cabecera[TAM_CABECERA]; //vector de 8 bytes
+>>>>>>> origin/kashu
         regSegmento segTabla[CANT_SEGMENTOS];
         uint16_t tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam;
         uint32_t regTabla[CANT_REGISTROS];
@@ -596,6 +601,7 @@ int main(int argc, char *argv[]){
 
         uint8_t *vecParam=NULL;
 
+<<<<<<< HEAD
         if(archExe){//Recibe un .vmx
             if(hayParam)
                 //OJO QUE LUEGO DE EJECUTAR ESTA FUNCION EL ARGC ES LA CANT DE PALABRAS DEL PARAM SEGMENT
@@ -603,6 +609,10 @@ int main(int argc, char *argv[]){
             
             fread(id_version, sizeof(uint8_t), 6, archExe);
             
+=======
+                segTabla[0].tamaño = tamCodigo;           //CS
+                segTabla[1].tamaño = TAM_RAM - tamCodigo; //DSz
+>>>>>>> origin/kashu
 
             uint8_t version=validarID_VERSION(id_version);
             if(version){
@@ -633,6 +643,7 @@ int main(int argc, char *argv[]){
                         uint32_t cursor = direcFisicaCodigo;
                         uint32_t limite = direcFisicaCodigo + tamCodigo;
 
+<<<<<<< HEAD
                         printf("\n> DISASSEMBLER - INICIO <");
                         while (cursor < limite) {
                             uint8_t instruccion = memoriaPrincipal[cursor];
@@ -642,6 +653,33 @@ int main(int argc, char *argv[]){
                             disassembler(instruccion, cursor, regTablaAux[2], regTablaAux[3]);
                             
                             cursor += tamInstruccion(instruccion);
+=======
+                    //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
+                    asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
+
+
+                    //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
+                    regTabla[0]+=tamInstruccion(instruccion);
+
+                    //Ejecuto la instruccion
+                    codIns=instruccion & 0x1F;
+
+                    if(codIns>=0x10 && codIns<=0x1F){  //Instruccion de 2 operandos
+                        if(condDissasembler)
+                            disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+                        codOp1=(regTabla[2]>>24)&0x000000FF;
+
+                        if(condDissasembler)
+                            disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+
+                        ((void (*)(uint32_t, uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla[3], regTabla, segTabla, memoriaPrincipal);
+
+                    }else
+                        if(codIns>=0x00 && codIns<=0x0A){
+                            if(condDissasembler)
+                                disassembler(instruccion, direcFisicaIns, regTabla[2], regTabla[3]);
+                            ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[codIns])(regTabla[2], regTabla, segTabla, memoriaPrincipal);
+>>>>>>> origin/kashu
                         }
                         printf("\n> DISASSEMBLER - FIN <\n");
                     }
@@ -652,6 +690,7 @@ int main(int argc, char *argv[]){
                         direcFisicaIns=convertirDirecLogica(regTabla[0], segTabla,1);
                         instruccion=memoriaPrincipal[direcFisicaIns];
 
+<<<<<<< HEAD
                         //Le asigna a los registros OPC,OP1 Y OP2 sus correspondientes valores
                         asignoRegsOperar(regTabla, instruccion, memoriaPrincipal, direcFisicaIns);
 
@@ -778,6 +817,20 @@ int main(int argc, char *argv[]){
                     }
                     
 
+=======
+
+
+                    //DEBUG - INÍCIO
+                        //printf("MBR: %X \n",regTabla[6]);
+                        //printf("ECX: %d\n", (int32_t)regTabla[12]);
+                        //printf("EAX: %d\n", (int32_t)regTabla[10]);
+                        //printf("\nAC: %u", regTabla[16]);
+
+                        //mostrarCC(regTabla);
+
+                    printf("\n-------------------------------------------------------\n");
+                    //DEBUG - FIN*/
+>>>>>>> origin/kashu
                 }
             }else
                 printf("\nERROR: Cabecera invalida");
