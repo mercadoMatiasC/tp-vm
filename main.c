@@ -282,41 +282,56 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
     }
 
     if(tip1==1)
-        strcpy(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
+        strcpy(vecAssembler[1], assemblerReg[(regOP1 & 0x1F)]);
     else
         if(tip1==2)
-            sprintf(vecAssembler[1],"%d",(int16_t)(regOP1 & 0xFFFF));
+            sprintf(vecAssembler[1], "%d", (int16_t)(regOP1 & 0xFFFF));
         else
             if(tip1==3){
-                sprintf(offset,"%d",(int16_t)((regOP1 >>8) & 0xFFFF));
-                strcpy(vecAssembler[1],"[");
-                strcat(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
-                if((int16_t)((regOP1 >>8) & 0xFFFF)>=0)
-                    strcat(vecAssembler[1],"+");
-                strcat(vecAssembler[1],offset);
-                strcat(vecAssembler[1],"]");
+                // CORRECCIÓN: Los bits de tamaño están en el desplazamiento 5 (bits 5-7)
+                uint8_t sizeBits = (regOP1 >> 5) & 0x07;
+                char prefijo = 'l';
 
+                if(sizeBits == 1)      prefijo = 'b'; // 001 -> byte
+                else if(sizeBits == 2) prefijo = 'w'; // 010 -> word
+                else if(sizeBits == 4) prefijo = 'l'; // 100 -> long
+
+                sprintf(offset, "%d", (int16_t)((regOP1 >> 8) & 0xFFFF));
+                sprintf(vecAssembler[1], "%c[%s", prefijo, assemblerReg[(regOP1 & 0x1F)]);
+                
+                if((int16_t)((regOP1 >> 8) & 0xFFFF) >= 0)
+                    strcat(vecAssembler[1], "+");
+                    
+                strcat(vecAssembler[1], offset);
+                strcat(vecAssembler[1], "]");
             }
 
     if(tip2==1)
-        strcpy(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+        strcpy(vecAssembler[2], assemblerReg[(regOP2 & 0x1F)]);
     else
         if(tip2==2)
-            sprintf(vecAssembler[2],"%d",(int16_t)(regOP2 & 0xFFFF));
+            sprintf(vecAssembler[2], "%d", (int16_t)(regOP2 & 0xFFFF));
         else
             if(tip2==3){
-                sprintf(offset,"%d",(int16_t)((regOP2 >>8) & 0xFFFF));
-                strcpy(vecAssembler[2],"[");
-                strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+                // CORRECCIÓN: Los bits de tamaño están en el desplazamiento 5 (bits 5-7)
+                uint8_t sizeBits = (regOP2 >> 5) & 0x07;
+                char prefijo = 'l';
 
-                if((int16_t)((regOP2 >>8) & 0xFFFF)>=0)
-                    strcat(vecAssembler[2],"+");
+                if(sizeBits == 1)      prefijo = 'b'; // 001 -> byte
+                else if(sizeBits == 2) prefijo = 'w'; // 010 -> word
+                else if(sizeBits == 4) prefijo = 'l'; // 100 -> long
 
-                strcat(vecAssembler[2],offset);
-                strcat(vecAssembler[2],"]");
+                sprintf(offset, "%d", (int16_t)((regOP2 >> 8) & 0xFFFF));
+                sprintf(vecAssembler[2], "%c[%s", prefijo, assemblerReg[(regOP2 & 0x1F)]);
+                
+                if((int16_t)((regOP2 >> 8) & 0xFFFF) >= 0)
+                    strcat(vecAssembler[2], "+");
+                    
+                strcat(vecAssembler[2], offset);
+                strcat(vecAssembler[2], "]");
             }
 
-    printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
+    printf("\n[%04X] %02X ", direcFisica, vecHexa[0]);
 
     for(i=1;i<tamInstruccion;++i)
         printf(" %02X ",vecHexa[i]); 
@@ -592,7 +607,7 @@ int main(int argc, char *argv[]){
             uint8_t version=validarID_VERSION(id_version);
             if(version){
                 if(version==1){
-                    
+                    printf("VERSION 1");
                     uint8_t tamSegmentos[TAM_VERSION1];//el vector almacena los bytes de tamaño del CS
                     fread(tamSegmentos, sizeof(uint8_t), TAM_VERSION1, archExe);
                     tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
@@ -664,6 +679,7 @@ int main(int argc, char *argv[]){
                     }
                 }
                 else{//version2
+                    printf("VERSION 2");
                     uint8_t tamSegmentos[TAM_VERSION2];//el vector almacena los bytes de tamaño de los segmentos CS,DS,ES,SS,CS y el offset del entry point
                     fread(tamSegmentos, sizeof(uint8_t), TAM_VERSION2, archExe);
                     tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
