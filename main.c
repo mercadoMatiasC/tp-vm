@@ -62,6 +62,7 @@ void iniciarTablaSegmentos(regSegmento segmentos[], int n){
         segmentos[i].tamaño = 0xFFFF;
     }
 }
+
 void iniciarTablaSegmentos2(regSegmento segmentos[],uint16_t tamCodigo,uint16_t tamExtra,uint16_t tamStack,uint16_t tamConst,uint16_t tamData,uint16_t tamParam){
     uint16_t baseAct = 0; //Acumula los tamaño de los segmentos anteriores para usarlo como base del siguiente segmento
     uint8_t n=0;
@@ -203,8 +204,8 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         "LAR",
         "MAR",
         "MBR",
-        "NADA",
-        "NADA",
+        "SP",
+        "BP",
         "NADA",
         "EAX",
         "EBX",
@@ -224,10 +225,10 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         "NADA",
         "CS",
         "DS",
-        "NADA",
-        "NADA",
-        "NADA",
-        "NADA"
+        "ES",
+        "SS",
+        "KS",
+        "PS"
     };
     char assemblerOp[32][8]={
             "SYS",  //00
@@ -242,17 +243,17 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             "JNZ",  //09
             "NOT",  //0A
 
-            "NADA", //0B
-            "NADA", //0C
-            "NADA", //0D
-            "NADA", //0E
+            "PUSH", //0B
+            "POP",  //0C
+            "CALL", //0D
+            "RET",  //0E
             "STOP", //0F
 
             "MOV",  //10
             "ADD",  //11
             "SUB",  //12
             "MUL",  //13
-            "DIV",   //14
+            "DIV",  //14
             "CMP",  //15
             "AND",  //16
             "OR",   //17
@@ -331,7 +332,7 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
                 strcat(vecAssembler[2], "]");
             }
 
-    printf("\n[%04X] %02X ", direcFisica, vecHexa[0]);
+    printf("[%04X] %02X ", direcFisica, vecHexa[0]);
 
     for(i=1;i<tamInstruccion;++i)
         printf(" %02X ",vecHexa[i]);
@@ -342,6 +343,8 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
 
     for(i=1;i<tamAssembler;++i)
         printf(" %s ",vecAssembler[i]);
+
+    printf("\n");
 }
 
 void mostrarCC(uint32_t regTabla[]){
@@ -455,6 +458,7 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
     *argc=cantPalabras;
     return vecParam;
 }
+
 void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[],uint8_t memoriaPrincipal[],regSegmento segTabla[]){
     uint32_t direcLogica= (regTabla[7] & 0xFFFF0000) | (uint16_t)( (( regTabla[7] & 0xFFFF) -4)&0xFFFF);//direcLogica que almacena el (SP), como
                                                                               //Como el SP en un inicio apunta por fuera del SS, le restamos 4 para iniciar la pila
@@ -633,7 +637,7 @@ int main(int argc, char *argv[]){
                         uint32_t cursor = direcFisicaCodigo;
                         uint32_t limite = direcFisicaCodigo + tamCodigo;
 
-                        printf("\n> DISASSEMBLER - INICIO <");
+                        printf("\n> DISASSEMBLER - INICIO <\n\n");
                         while (cursor < limite) {
                             uint8_t instruccion = memoriaPrincipal[cursor];
                             uint32_t regTablaAux[4] = {0};
@@ -719,27 +723,81 @@ int main(int argc, char *argv[]){
                     //Inicio la pila en la memoria principal.
                     inicializarSubrutinaPrincipal(argc,tamParam,regTabla,memoriaPrincipal,segTabla);
 
-
                     if (condDissasembler) {
-                        uint32_t direcFisicaCodigo = (hayParam == 0) ? 0 : tamParam;
-                        uint32_t cursor = direcFisicaCodigo;
-                        uint32_t limite = direcFisicaCodigo + tamCodigo;
+                        uint32_t direcFisicaActual = 0;
+
+                        if (hayParam != 0)  //SI HAY PARAMETROS SALTAMOS EL PS
+                            direcFisicaActual += tamParam;
 
                         printf("\n> DISASSEMBLER - INICIO <");
-                        while (cursor < limite) {
+
+                        if (tamConst != 0) { //SI KS TIENE CONSTANTES, LAS IMPRIMIMOS
+                            uint32_t limiteConst = direcFisicaActual + tamConst;
+
+                            while (direcFisicaActual < limiteConst) {
+                                uint32_t dirInicioCadena = direcFisicaActual;
+                                uint8_t bytesCadena[256];
+                                int lenBytes = 0;
+
+                                while (direcFisicaActual < limiteConst) { //LEEMOS HASTA QUE SE TERMINE LA CADENA O SE LLEGUE AL LIMITE
+                                    uint8_t b = memoriaPrincipal[direcFisicaActual++];
+                                    bytesCadena[lenBytes++] = b;
+
+                                    if (b == 0x00) 
+                                        break;
+                                }
+
+                                printf("\n  [%04X] ", dirInicioCadena);
+
+                                int mostrarHex = (lenBytes > 7) ? 6 : lenBytes;
+                                int bIdx;
+
+                                for (bIdx = 0; bIdx < mostrarHex; bIdx++)
+                                    printf("%02X ", bytesCadena[bIdx]);
+
+                                if (lenBytes > 7)
+                                    printf(".. "); //RELLENA CON .. SI EXCEDE LOS 7 BYTES
+                                else 
+                                    for (int k = lenBytes; k < 7; k++)
+                                        printf("   ");
+
+                                printf(" |  \"");
+
+                                for (bIdx = 0; bIdx < lenBytes - 1; bIdx++) {
+                                    char c = (char)bytesCadena[bIdx];
+
+                                    if (c >= 32 && c <= 126)
+                                        printf("%c", c);
+                                    else
+                                        printf("."); //SI NO SE PUEDEN IMPRIMIR -> .
+                                }
+                                printf("\"");
+                            }
+                        }
+
+                        //LUEGO PASAMOS A ANALIZAR EL CODIGO (CS)
+                        uint32_t cursor = direcFisicaActual;
+                        uint32_t limiteCodigo = cursor + tamCodigo;
+
+                        uint32_t direcFisicaEntry = cursor + (offsetEntry & 0xFFFF); //DIRECCION DEL ENTRYPOINT
+
+                        while (cursor < limiteCodigo) {
                             uint8_t instruccion = memoriaPrincipal[cursor];
                             uint32_t regTablaAux[4] = {0};
-
+                            
                             asignoRegsOperar(regTablaAux, instruccion, memoriaPrincipal, cursor);
-                            disassembler(instruccion, cursor, regTablaAux[2], regTablaAux[3]);
 
+                            if (cursor == direcFisicaEntry) //EN EL ENTRYPOINT MARCAMOS LA FLECHA DE INICIO
+                                printf("\n> ");
+                            else
+                                printf("  ");
+                            
+                            disassembler(instruccion, cursor, regTablaAux[2], regTablaAux[3]);
+                            
                             cursor += tamInstruccion(instruccion);
                         }
-                        printf("\n> DISASSEMBLER - FIN <\n");
+                        printf("> DISASSEMBLER - FIN <\n");
                     }
-
-
-
 
                     while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
 
