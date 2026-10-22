@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h> //TIENE CONSTANTES CON VALORES MAXIMOS Y MINIMOS DE TIPOS ENTEROS
+#include <string.h>
 #include "operaciones.h"
 
 
@@ -49,8 +50,6 @@ void guardarImagenVMI(char* nombreArchivoVMI, uint32_t regTabla[],regSegmento se
             fwrite(b, sizeof(uint8_t), 4, archivo);//De esta forma se van almacenar los registros en Big-Endian
         }
 
-
-
         // --- SECCIÓN 3: TABLA DE DESCRIPTORES DE SEGMENTOS (32 bytes) ---
         // Son 8 segmentos en total (CANT_SEGMENTOS). Cada uno tiene base (2 bytes) y tamaño (2 bytes).
 
@@ -83,7 +82,40 @@ void guardarImagenVMI(char* nombreArchivoVMI, uint32_t regTabla[],regSegmento se
 
         fclose(archivo);
     }
+}
 
+void cargarImagenVMI(char* nombreArchivoVMI, uint32_t regTabla[],regSegmento segTabla[],uint8_t memoriaPrincipal[]){
+    FILE *arch = fopen(nombreArchivoVMI,"rb");
+
+    if (arch == NULL){
+        printf("Archivo invalido, no se pudo cargar la imagen: %s", nombreArchivoVMI);
+        exit(1);
+    }else{
+        uint8_t header[8], regs[128], segs[32];
+        if (fread(header,sizeof(uint8_t),8,arch) != 8 || fread(regs,sizeof(uint8_t),128,arch) != 128 ||fread(segs,sizeof(uint8_t),32,arch) != 32){
+            printf("Archivo de imagen incompleto: %s", nombreArchivoVMI);
+            fclose(arch);
+            exit(1);
+        }
+
+        for (int i = 0; i < 32; i++){
+            for (int j = 0; j < 4; j++){
+                regTabla[i] = (regTabla[i]<<8)|regs[i*4 + j];
+            }
+        }
+
+        for(int i = 0; i< 8; i++){
+            for(int j = 0; j<4; j++){
+                if(j<2){
+                    segTabla[i].base = (segTabla[i].base << 8) | segs[i*4 + j];
+                }else{
+                    segTabla[i].tamaño = (segTabla[i].tamaño << 8) | segs[i*4 + j];
+                }
+            }
+        }
+        fread(memoriaPrincipal,sizeof(uint8_t),tamMemoria,arch);
+        fclose(arch);
+    }
 }
 
 uint32_t convertirDirecLogica(uint32_t direcLogica, regSegmento segTabla[],int nBytes){
