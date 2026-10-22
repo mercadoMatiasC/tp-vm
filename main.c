@@ -604,6 +604,7 @@ int main(int argc, char *argv[]){
 
                         iniciarTablaSegmentos(segTabla, 2);
                         iniciarRegistros(regTabla);
+                        regTabla[30]=0xFFFFFFFF; //inicializo KS
                         fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
                     }else{//hay parametros y van primero en la memoria principal
                         fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
