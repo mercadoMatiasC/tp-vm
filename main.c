@@ -527,8 +527,13 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    if (indiceVMX == -1 && indiceVMI != -1){
+    if (indiceVMI != -1) {
+        // Si el usuario pasó un archivo .vmi, guardamos su ruta/nombre
+        // en la variable global para que el SYS 0xF (Breakpoint) pueda usarla.
         nombreArchivoVMI = argv[indiceVMI];
+    }
+
+    if (indiceVMX == -1 && indiceVMI != -1){
         archImg = fopen(nombreArchivoVMI,"rb");
         if (archImg == NULL){
             printf("ERROR: Archivo invalido, no se pudo cargar la imagen: %s", nombreArchivoVMI);
@@ -536,18 +541,12 @@ int main(int argc, char *argv[]){
         }
         uint8_t header[8];
         if (fread(header,sizeof(uint8_t),8,archImg) != 8 || memcmp(header,"VMI26",5) != 0 || header[5] != 1){
-            printf("ERROR: Cabezera invalida, no pudo cargarse la imagen\n");
+            printf("ERROR: Cabecera invalida, no pudo cargarse la imagen\n");
             fclose(archImg);
             return 1;
         }
-        tamMemoria = ((header[6] << 8) | header[7])*1024;
+        tamMemoria = (header[6] == 0 && header[7] == 0) ? 16*1024 : ((header[6] << 8) | header[7])*1024;
         fclose(archImg);
-    }
-
-    if (indiceVMI != -1) {
-        // Si el usuario pasó un archivo .vmi, guardamos su ruta/nombre
-        // en la variable global para que el SYS 0xF (Breakpoint) pueda usarla.
-        nombreArchivoVMI = argv[indiceVMI];
     }
 
     if(indiceVMX != -1) {
@@ -847,91 +846,9 @@ int main(int argc, char *argv[]){
     }else{
         if(nombreArchivoVMI){
             cargarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
-            uint16_t tamCodigo = 0,tamExtra = 0,tamStack = 0,tamConst = 0,tamData = 0,offsetEntry = 0,tamParam = 0;
+            uint16_t tamCodigo = 0;
 
             tamCodigo = ((regTabla[26] & 0xFFFF0000) >> 16) != 0xFFFF ? segTabla[((regTabla[26] & 0xFFFF0000) >> 16)].tamaño : 0;
-            tamData = ((regTabla[27] & 0xFFFF0000) >> 16) != 0xFFFF ? segTabla[((regTabla[27] & 0xFFFF0000) >> 16)].tamaño : 0;
-            tamExtra = ((regTabla[28] & 0xFFFF0000) >> 16) != 0xFFFF ? segTabla[((regTabla[28] & 0xFFFF0000) >> 16)].tamaño : 0;
-            tamStack = ((regTabla[29] & 0xFFFF0000) >> 16) != 0xFFFF ? segTabla[((regTabla[29] & 0xFFFF0000) >> 16)].tamaño : 0;
-            tamConst = ((regTabla[30] & 0xFFFF0000) >> 16) != 0xFFFF ? segTabla[((regTabla[30] & 0xFFFF0000) >> 16)].tamaño : 0;
-            tamParam = ((regTabla[31] & 0xFFFF0000) >> 16) != 0xFFFF ? segTabla[((regTabla[31] & 0xFFFF0000) >> 16)].tamaño : 0;
-            offsetEntry = (regTabla[0] & 0xFFFF);
-
-            if (condDissasembler) {
-                uint32_t direcFisicaActual = 0;
-
-                if (tamParam != 0)  //SI HAY PARAMETROS SALTAMOS EL PS
-                    direcFisicaActual += tamParam;
-
-                printf("> DISASSEMBLER - INICIO <\n");
-
-                if (tamConst != 0) { //SI KS TIENE CONSTANTES, LAS IMPRIMIMOS
-                    uint32_t limiteConst = direcFisicaActual + tamConst;
-
-                    while (direcFisicaActual < limiteConst) {
-                        uint32_t dirInicioCadena = direcFisicaActual;
-                        uint8_t bytesCadena[256];
-                        int lenBytes = 0;
-
-                        while (direcFisicaActual < limiteConst) { //LEEMOS HASTA QUE SE TERMINE LA CADENA O SE LLEGUE AL LIMITE
-                            uint8_t b = memoriaPrincipal[direcFisicaActual++];
-                            bytesCadena[lenBytes++] = b;
-
-                            if (b == 0x00)
-                                break;
-                        }
-
-                        printf("\n  [%04X] ", dirInicioCadena);
-
-                        int mostrarHex = (lenBytes > 7) ? 6 : lenBytes;
-                        int bIdx;
-
-                        for (bIdx = 0; bIdx < mostrarHex; bIdx++)
-                            printf("%02X ", bytesCadena[bIdx]);
-
-                        if (lenBytes > 7)
-                            printf(".. "); //RELLENA CON .. SI EXCEDE LOS 7 BYTES
-                        else
-                            for (int k = lenBytes; k < 7; k++)
-                                printf("   ");
-
-                        printf(" |  \"");
-
-                        for (bIdx = 0; bIdx < lenBytes - 1; bIdx++) {
-                            char c = (char)bytesCadena[bIdx];
-
-                            if (c >= 32 && c <= 126)
-                                printf("%c", c);
-                            else
-                                printf("."); //SI NO SE PUEDEN IMPRIMIR -> .
-                        }
-                        printf("\"");
-                    }
-                }
-
-                //LUEGO PASAMOS A ANALIZAR EL CODIGO (CS)
-                uint32_t cursor = direcFisicaActual;
-                uint32_t limiteCodigo = cursor + tamCodigo;
-
-                uint32_t direcFisicaEntry = cursor + (offsetEntry & 0xFFFF); //DIRECCION DEL ENTRYPOINT
-
-                while (cursor < limiteCodigo) {
-                    uint8_t instruccion = memoriaPrincipal[cursor];
-                    uint32_t regTablaAux[4] = {0};
-
-                    asignoRegsOperar(regTablaAux, instruccion, memoriaPrincipal, cursor);
-
-                    if (cursor == direcFisicaEntry) //EN EL ENTRYPOINT MARCAMOS LA FLECHA DE INICIO
-                        printf("\n> ");
-                    else
-                        printf("  ");
-
-                    disassembler(instruccion, cursor, regTablaAux[2], regTablaAux[3]);
-
-                    cursor += tamInstruccion(instruccion);
-                }
-                printf("> DISASSEMBLER - FIN <\n");
-            }
 
             while (((regTabla[0] & 0xFFFF) < tamCodigo) && (regTabla[0] != 0xFFFFFFFF)){ //TRAER Y EJECUTAR HASTA QUE SE TERMINE EL CS O HASTA STOP
 
