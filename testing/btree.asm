@@ -152,4 +152,167 @@ inorder_end:    pop     edx
 
 
 
+;----------------------------------------
+; imprime en post-order árbol binario de búsqueda (BST)
+; parámetros: 
+;  +8 puntero simple a root
+;----------------------------------------
+; invocación:
+; push  <*root>
+; call  postorder
+; add   sp,4
+; (no devuelve nada)
+;----------------------------------------
+postorder:        push    bp
+                mov     bp, sp
+                push    eax
+                push    ebx
+                push    ecx
+                push    edx
+
+                mov     ebx, [bp+8]     ; *root
+                
+                cmp     ebx, null
+                jz      postorder_end
+
+                ; llamo por izquierda
+                push    [ebx+left]
+                call    postorder
+                add     sp, 4
+
+                ; llamo por derecha
+                push    [ebx+right]
+                call    postorder
+                add     sp, 4
+
+                ; preparo en edx la dirección de la variable aux
+                mov     edx, ebx
+                add     edx, val    
+                mov     eax, 0x0001
+                ldh     ecx, 0x04
+                ldl     ecx, 0x01
+                sys     0x0002
+          
+
+postorder_end:    pop     edx
+                pop     ecx
+                pop     ebx
+                pop     eax
+                mov     sp, bp
+                pop     bp
+                ret
+
+
+
+
+;----------------------------------------
+; imprime en post-order árbol binario de búsqueda (BST)
+; parámetros: 
+;  +8 puntero simple a root
+;----------------------------------------
+; invocación:
+; push  <*root>
+; call  preorder
+; add   sp,4
+; (no devuelve nada)
+;----------------------------------------
+preorder:        push    bp
+                mov     bp, sp
+                push    eax
+                push    ebx
+                push    ecx
+                push    edx
+
+                mov     ebx, [bp+8]     ; *root
+                
+                cmp     ebx, null
+                jz      preorder_end
+
+                ; preparo en edx la dirección de la variable aux
+                mov     edx, ebx
+                add     edx, val    
+                mov     eax, 0x0001
+                ldh     ecx, 0x04
+                ldl     ecx, 0x01
+                sys     0x0002
+                ; llamo por izquierda
+                push    [ebx+left]
+                call    preorder
+                add     sp, 4
+
+                ; llamo por derecha
+                push    [ebx+right]
+                call    preorder
+                add     sp, 4
+
+                
+          
+
+preorder_end:    pop     edx
+                pop     ecx
+                pop     ebx
+                pop     eax
+                mov     sp, bp
+                pop     bp
+                ret
+
+
+dato equ 0
+izq equ 4
+der equ 8
+
+;push <<arbol*>
+;call suma_hijos
+;add sp,4
+;en eax retorna 1 si se sumple que la suma de los hijos es igual al dato del padre para cada nodo del arbol
+
+suma_hijos:	push bp
+		mov bp,sp
+		sub sp,4
+		push ecx
+		push ebx
+		push edx
+		mov edx,1; edx es res
+		mov ecx,[bp+8]; ecx es A
+		cmp ecx,null
+		jz fin
+		cmp [ecx+izq],null
+		jnz continua
+		cmp [ecx+der],null
+		jz fin
+        
+continua:	mov w[bp-4],0
+        
+		cmp [ecx+izq],null
+		jz analizoDer
+		mov ebx,[ecx+izq]
+		add w[bp-4],w[ebx+dato]
+analizoDer:	cmp [ecx+der],null
+		jz resultado
+		mov ebx,[ecx+der]
+		add w[bp-4],w[ebx+dato]
+resultado:	cmp w[ecx+dato],w[bp-4]
+        
+		jnz cero
+		push [ecx+izq]
+		call suma_hijos
+		add sp,4
+		cmp eax,0
+		jz cero
+		push [ecx+der]
+		call suma_hijos
+		add sp,4
+		cmp eax,0
+		jz cero
+		jmp fin
+cero:	mov edx,0
+
+fin:	mov eax,edx
+		pop edx
+		pop ebx
+		pop ecx
+		mov sp,bp
+		pop bp
+		ret
+		
 

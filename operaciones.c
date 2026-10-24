@@ -885,6 +885,10 @@ void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 void call(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
 
     regTabla[7] = (regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF) - 4) & 0xFFFF);//Actualizo el SP para guardar el RET
+    if(regTabla[7]<regTabla[29]){//si SP<SS entonces ya no hay espacio en la pila
+        printf("STACK OVERFLOW POR call");
+        exit(1);
+    }
     escribirMemoria(regTabla[7],regTabla[0],regTabla,segTabla,memoriaPrincipal,4);
 
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
@@ -892,8 +896,17 @@ void call(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
     regTabla[0]=direcLogica;
 }
 void ret(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint16_t codSeg=(regTabla[29]&0xFFFF0000)>>16;
     uint32_t direcLogica= regTabla[7];//direcLogica que almacena el (SP)
-
+    if(regTabla[7]==(regTabla[29]+segTabla[codSeg].tamaño)){//si SP tiene SS+tamaño pila es porque esta vacia
+        printf("Stack underflow ret pop,pila vacia");
+        exit(1);
+    }
+    else
+        if( ((regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF))>(regTabla[29]+segTabla[codSeg].tamaño) ){ //si SP es mayor a SS+tamaño luego del incremento entonces los bytes no son suficientes
+            printf("Stack underflow por ret,no hay suficientes bytes");
+            exit(1);
+        }
     // Leemos lo que hay en la pila
     uint32_t direccionRetorno = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
 
@@ -901,13 +914,27 @@ void ret(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]
     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
 }
 void pop(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
+    uint16_t codSeg=(regTabla[29]&0xFFFF0000)>>16;
     uint32_t valor=leerMemoria(regTabla[7],regTabla,segTabla,memoriaPrincipal,4);
+    if(regTabla[7]==(regTabla[29]+segTabla[codSeg].tamaño)){//si SP tiene SS+tamaño pila es porque esta vacia
+        printf("Stack underflow por pop,pila vacia");
+        exit(1);
+    }
+    else
+        if( ((regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF))>(regTabla[29]+segTabla[codSeg].tamaño) ){ //si SP es mayor a SS+tamaño luego del incremento entonces los bytes no son suficientes
+            printf("Stack underflow por pop,no hay suficientes bytes");
+            exit(1);
+        }
     escribeOperando(reg1,valor,regTabla,segTabla,memoriaPrincipal);
     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
 }
 void push(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint32_t valor=leerOperando(reg1,regTabla,segTabla,memoriaPrincipal);
-    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo SP
 
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo SP
+    if(regTabla[7]<regTabla[29]){//si SP<SS entonces ya no hay espacio en la pila
+        printf("STACK OVERFLOW POR PUSH");
+        exit(1);
+    }
     escribirMemoria(regTabla[7],valor,regTabla,segTabla,memoriaPrincipal,4);
 }
