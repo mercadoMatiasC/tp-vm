@@ -191,7 +191,6 @@ uint32_t tamInstruccion(uint8_t instruccion){
 
     return tamAux;
 }
-
 void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint32_t regOP2){
     uint8_t tip1,tip2,vecHexa[100],vecAssembler[100][50];
     int tamInstruccion=1,i,index=1,tamAssembler=1;
@@ -204,8 +203,8 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         "LAR",
         "MAR",
         "MBR",
-        "NADA",
-        "NADA",
+        "SP",
+        "BP",
         "NADA",
         "EAX",
         "EBX",
@@ -225,10 +224,10 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         "NADA",
         "CS",
         "DS",
-        "NADA",
-        "NADA",
-        "NADA",
-        "NADA"
+        "ES",
+        "SS",
+        "KS",
+        "PS"
     };
     char assemblerOp[32][8]={
             "SYS",  //00
@@ -244,16 +243,16 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
             "NOT",  //0A
 
             "PUSH", //0B
-            "POP", //0C
+            "POP",  //0C
             "CALL", //0D
-            "RET", //0E
+            "RET",  //0E
             "STOP", //0F
 
             "MOV",  //10
             "ADD",  //11
             "SUB",  //12
             "MUL",  //13
-            "DIV",   //14
+            "DIV",  //14
             "CMP",  //15
             "AND",  //16
             "OR",   //17
@@ -283,44 +282,59 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
     }
 
     if(tip1==1)
-        strcpy(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
+        strcpy(vecAssembler[1], assemblerReg[(regOP1 & 0x1F)]);
     else
         if(tip1==2)
-            sprintf(vecAssembler[1],"%d",(int16_t)(regOP1 & 0xFFFF));
+            sprintf(vecAssembler[1], "%d", (int16_t)(regOP1 & 0xFFFF));
         else
             if(tip1==3){
-                sprintf(offset,"%d",(int16_t)((regOP1 >>8) & 0xFFFF));
-                strcpy(vecAssembler[1],"[");
-                strcat(vecAssembler[1],assemblerReg[(regOP1 & 0x1F)]);
-                if((int16_t)((regOP1 >>8) & 0xFFFF)>=0)
-                    strcat(vecAssembler[1],"+");
-                strcat(vecAssembler[1],offset);
-                strcat(vecAssembler[1],"]");
+                // CORRECCIÓN: Los bits de tamaño están en el desplazamiento 5 (bits 5-7)
+                uint8_t sizeBits = (regOP1 >> 5) & 0x07;
+                char prefijo = 'l';
 
+                if(sizeBits == 1)      prefijo = 'b'; // 001 -> byte
+                else if(sizeBits == 2) prefijo = 'w'; // 010 -> word
+                else if(sizeBits == 4) prefijo = 'l'; // 100 -> long
+
+                sprintf(offset, "%d", (int16_t)((regOP1 >> 8) & 0xFFFF));
+                sprintf(vecAssembler[1], "%c[%s", prefijo, assemblerReg[(regOP1 & 0x1F)]);
+
+                if((int16_t)((regOP1 >> 8) & 0xFFFF) >= 0)
+                    strcat(vecAssembler[1], "+");
+
+                strcat(vecAssembler[1], offset);
+                strcat(vecAssembler[1], "]");
             }
 
     if(tip2==1)
-        strcpy(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+        strcpy(vecAssembler[2], assemblerReg[(regOP2 & 0x1F)]);
     else
         if(tip2==2)
-            sprintf(vecAssembler[2],"%d",(int16_t)(regOP2 & 0xFFFF));
+            sprintf(vecAssembler[2], "%d", (int16_t)(regOP2 & 0xFFFF));
         else
             if(tip2==3){
-                sprintf(offset,"%d",(int16_t)((regOP2 >>8) & 0xFFFF));
-                strcpy(vecAssembler[2],"[");
-                strcat(vecAssembler[2],assemblerReg[(regOP2 & 0x1F)]);
+                // CORRECCIÓN: Los bits de tamaño están en el desplazamiento 5 (bits 5-7)
+                uint8_t sizeBits = (regOP2 >> 5) & 0x07;
+                char prefijo = 'l';
 
-                if((int16_t)((regOP2 >>8) & 0xFFFF)>=0)
-                    strcat(vecAssembler[2],"+");
+                if(sizeBits == 1)      prefijo = 'b'; // 001 -> byte
+                else if(sizeBits == 2) prefijo = 'w'; // 010 -> word
+                else if(sizeBits == 4) prefijo = 'l'; // 100 -> long
 
-                strcat(vecAssembler[2],offset);
-                strcat(vecAssembler[2],"]");
+                sprintf(offset, "%d", (int16_t)((regOP2 >> 8) & 0xFFFF));
+                sprintf(vecAssembler[2], "%c[%s", prefijo, assemblerReg[(regOP2 & 0x1F)]);
+
+                if((int16_t)((regOP2 >> 8) & 0xFFFF) >= 0)
+                    strcat(vecAssembler[2], "+");
+
+                strcat(vecAssembler[2], offset);
+                strcat(vecAssembler[2], "]");
             }
 
-    printf("\n[%04X] %02X ",direcFisica,vecHexa[0]);
+    printf("[%04X] %02X ", direcFisica, vecHexa[0]);
 
     for(i=1;i<tamInstruccion;++i)
-        printf(" %02X ",vecHexa[i]); 
+        printf(" %02X ",vecHexa[i]);
 
     tamAssembler += tip1!=0;
     tamAssembler += tip2!=0;
@@ -328,8 +342,9 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
 
     for(i=1;i<tamAssembler;++i)
         printf(" %s ",vecAssembler[i]);
-}
 
+    printf("\n");
+}
 void mostrarCC(uint32_t regTabla[]){
     uint32_t flags = (regTabla[17] >> 28) & 0x0F;
 

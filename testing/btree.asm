@@ -257,62 +257,62 @@ preorder_end:    pop     edx
                 ret
 
 
-dato equ 0
-izq equ 4
-der equ 8
+;push <<root*>>
+;push <<valorEntero>>
+;call informaExiste
+;add sp,8
 
-;push <<arbol*>
-;call suma_hijos
-;add sp,4
-;en eax retorna 1 si se sumple que la suma de los hijos es igual al dato del padre para cada nodo del arbol
+existe   equ "Esta en el arbol"
+noExiste equ " \n\tNo esta en el arbol"
 
-suma_hijos:	push bp
-		mov bp,sp
-		sub sp,4
-		push ecx
-		push ebx
-		push edx
-		mov edx,1; edx es res
-		mov ecx,[bp+8]; ecx es A
-		cmp ecx,null
-		jz fin
-		cmp [ecx+izq],null
-		jnz continua
-		cmp [ecx+der],null
-		jz fin
+
+; ==================================================
+; Subrutina: informaExiste
+; Recibe en pila: 
+;   [bp+12] = Puntero al nodo actual (root)
+;   [bp+8]  = Valor entero a buscar
+; ==================================================
+informaExiste1: push bp
+        mov bp, sp
+        push eax
+
+        ; 1. Obtenemos el puntero al nodo actual ([bp+12])
+        mov eax, [bp+12]
         
-continua:	mov w[bp-4],0
-        
-		cmp [ecx+izq],null
-		jz analizoDer
-		mov ebx,[ecx+izq]
-		add w[bp-4],w[ebx+dato]
-analizoDer:	cmp [ecx+der],null
-		jz resultado
-		mov ebx,[ecx+der]
-		add w[bp-4],w[ebx+dato]
-resultado:	cmp w[ecx+dato],w[bp-4]
-        
-		jnz cero
-		push [ecx+izq]
-		call suma_hijos
-		add sp,4
-		cmp eax,0
-		jz cero
-		push [ecx+der]
-		call suma_hijos
-		add sp,4
-		cmp eax,0
-		jz cero
-		jmp fin
-cero:	mov edx,0
+        ; 2. Caso base: si el puntero es null (0), no está
+        cmp eax, null
+        jz noExist
 
-fin:	mov eax,edx
-		pop edx
-		pop ebx
-		pop ecx
-		mov sp,bp
-		pop bp
-		ret
-		
+        cmp [eax+val],[bp+8]
+        
+        jz Exist              ; Si dio cero, son iguales -> ¡Lo encontró!
+        jn recorre_der        ; Si dio negativo (el nodo es mayor al buscado), va a la derecha
+        jp recorre_izq       ; Si dio positivo (el nodo es menor al buscado), va a la izquierda
 
+recorre_der: mov eax, [eax+right]
+        push eax
+        push [bp+8]
+        call informaExiste1
+        add sp, 8
+        jmp fin
+
+recorre_izq: mov eax, [eax+left]
+        push eax
+        push [bp+8]
+        call informaExiste1
+        add sp, 8
+        jmp fin
+
+noExist:  mov edx, ks
+        add edx, noExiste
+        sys 0x4
+        jmp fin
+
+Exist: mov edx, ks
+        add edx, existe
+        sys 0x4
+
+fin:  pop eax
+        mov sp, bp
+        pop bp
+        ret
