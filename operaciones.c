@@ -3,9 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h> //TIENE CONSTANTES CON VALORES MAXIMOS Y MINIMOS DE TIPOS ENTEROS
-#include <string.h>
 #include "operaciones.h"
-
 
 
 void guardarImagenVMI(char* nombreArchivoVMI, uint32_t regTabla[],regSegmento segTabla[],uint8_t memoriaPrincipal[]){
@@ -246,30 +244,7 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
         return valor;
     }
 }
-/*uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    uint8_t codOp = (regOp >> 24) & 0x000000FF;
-    uint32_t codReg = regOp & 0x0000001F;
-    uint32_t valor;
-    if (codOp == 1) {
 
-        return  valor=regTabla[codReg];
-
-
-    }else
-        if (codOp == 2)//inmediato
-            // Al castear primero a int16_t y luego a int32_t/uint32_t, 0xFFFF pasa a ser 0xFFFFFFFF (-1)
-            return (uint32_t)(int32_t)(int16_t)(regOp & 0x0000FFFF);
-        else {
-            int16_t offset = (regOp >> 8) & 0x0000FFFF;
-            uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-
-
-           //Sumar offset no con registro sino con los 2 bytes menos significativos y despues conectarlo con los 2 bytes mas significativos del registro codReg
-           valor=leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
-           return valor;
-        }
-}
-        */
 
 void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
     uint8_t codOp = (regOp >> 24) & 0x000000FF;
@@ -320,27 +295,6 @@ void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSeg
 }
 
 
-/*
-void escribeOperando(uint32_t regOp, uint32_t valor, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]) {
-    uint8_t codOp=(regOp>>24)&0x000000FF;
-    uint32_t codReg = regOp & 0x0000001F;
-
-    if(codOp==1){
-
-        uint8_t Sector=(regOp>>5)&0x3; //Obtengo el bit 5 y 6 que me indica el sector del registro
-
-        regTabla[codReg]=valor;
-
-    }else{
-
-        int16_t offset = (regOp >> 8) & 0x0000FFFF;
-        uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
-
-        escribirMemoria(direcLogica,valor,regTabla,segTabla,memoriaPrincipal,4);
-
-    }
-}
-    */
 void actualizarCC_General(int32_t op1, int32_t op2, uint32_t regTabla[], int64_t resultado, int tipo) {
     uint32_t res32 = (uint32_t)resultado;
     int32_t  res32_signed = (int32_t)res32;
@@ -565,20 +519,45 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
         }
         else
             if(valor==0x0F){
-                    // 1. Verificás si hay un archivo de imagen .vmi definido (por ejemplo, en una variable global o pasada por parámetro)
+                    // 1. Se verifica si hay un archivo de imagen .vmi definido 
                     if (nombreArchivoVMI != NULL) {
+                                // Generar la imagen con el estado actual completo de la VM
+                                guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
+                                printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
 
-                        // 2. Generás la imagen con el estado actual completo de la VM (Cabecera, Registros, Tabla de Segmentos y Memoria)
-                        guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
-                        printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
-                        char res;
-                        printf("Ingrese res: \n");
-                        scanf(" %c",&res);
-                        if(res=='q')
-                            exit(1);
-
-
-                        //Faltaria implementar la del enter con variable global
+                                char comando[10];
+                                int comandoValido = 0; // Variable de control para el bucle
+                                
+                                
+                                // El bucle se repite MIENTRAS NO se haya ingresado un comando válido
+                                while (!comandoValido) {
+                                    printf("Ingrese res: "); 
+                                    if (fgets(comando, sizeof(comando), stdin) != NULL) {
+                                        // 2. Multiplataforma: '\n' es el Enter en Linux/Mac y '\r' captura el de Windows
+                                        if (comando[0] == '\n' || comando[0] == '\r') {
+                                            flagPasoAPaso = 1; 
+                                            comandoValido = 1; // Cumple la condición y el while termina solo
+                                        }
+                                        
+                                        // Si ingresa 'g' (Go)
+                                        else if (comando[0] == 'g' || comando[0] == 'G') {
+                                            flagPasoAPaso = 0; 
+                                            comandoValido = 1; // Cumple la condición y el while termina solo
+                                        }
+                                        
+                                        // Si ingresa 'q' (Quit)
+                                        else if (comando[0] == 'q' || comando[0] == 'Q') {
+                                            exit(1); // Termina el programa completo
+                                        }
+                                        
+                                        // Si ingresa cualquier otra cosa
+                                        else {
+                                            printf("Comando no reconocido. Presione Enter (Paso a paso), 'g' (Continuar) o 'q' (Salir).\n");
+                                        }
+                                    
+                                    
+                                    }
+                                }
                     }
 
 
@@ -916,11 +895,18 @@ void  rnd(uint32_t reg1, uint32_t reg2, uint32_t regTabla[], regSegmento segTabl
 
 void call(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
 
-    regTabla[7] = (regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF) - 4) & 0xFFFF);//Actualizo el SP para guardar el RET
-    if(regTabla[7]<regTabla[29]){//si SP<SS entonces ya no hay espacio en la pila
-        printf("STACK OVERFLOW POR call");
+    
+     // 1. Aislamos los offsets actuales (sin signo)
+    uint16_t offset_SP = regTabla[7] & 0xFFFF;
+    uint16_t offset_SS = regTabla[29] & 0xFFFF;
+
+    // 2. Evaluamos ANTES de modificar el registro. 
+    // ¿El SP actual está a menos de 4 bytes de chocar con el fondo del segmento?
+    if (offset_SP < offset_SS + 4) { 
+        printf("STACK OVERFLOW POR CALL\n");
         exit(1);
     }
+    regTabla[7] = (regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF) - 4) & 0xFFFF);//Actualizo el SP para guardar el RET
     escribirMemoria(regTabla[7],regTabla[0],regTabla,segTabla,memoriaPrincipal,4);
 
     uint32_t offset = leerOperando(reg1, regTabla, segTabla, memoriaPrincipal);
@@ -930,43 +916,59 @@ void call(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 void ret(uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint16_t codSeg=(regTabla[29]&0xFFFF0000)>>16;
     uint32_t direcLogica= regTabla[7];//direcLogica que almacena el (SP)
-    if(regTabla[7]==(regTabla[29]+segTabla[codSeg].tamaño)){//si SP tiene SS+tamaño pila es porque esta vacia
-        printf("Stack underflow ret pop,pila vacia");
+    // 1. Aislamos el offset actual del SP y el límite (sin signo)
+   
+    uint16_t offset_SP = regTabla[7] & 0xFFFF;
+    uint16_t tamPila = segTabla[codSeg].tamaño;
+
+    // 2. Evaluamos el Underflow ANTES de leer
+    if(offset_SP == tamPila){ 
+        printf("Stack underflow por ret , pila vacia\n");
         exit(1);
     }
-    else
-        if( ((regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF))>(regTabla[29]+segTabla[codSeg].tamaño) ){ //si SP es mayor a SS+tamaño luego del incremento entonces los bytes no son suficientes
-            printf("Stack underflow por ret,no hay suficientes bytes");
-            exit(1);
-        }
+    else if(offset_SP + 4 > tamPila){ 
+        printf("Stack underflow por ret, no hay suficientes bytes\n");
+        exit(1);
+    }
     // Leemos lo que hay en la pila
-    uint32_t direccionRetorno = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal,4);
-
     regTabla[0]=leerMemoria(direcLogica,regTabla,segTabla,memoriaPrincipal,4);//Recupero el RET y actualizo IP
     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
 }
 void pop(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint16_t codSeg=(regTabla[29]&0xFFFF0000)>>16;
-    uint32_t valor=leerMemoria(regTabla[7],regTabla,segTabla,memoriaPrincipal,4);
-    if(regTabla[7]==(regTabla[29]+segTabla[codSeg].tamaño)){//si SP tiene SS+tamaño pila es porque esta vacia
-        printf("Stack underflow por pop,pila vacia");
+   
+    uint16_t offset_SP = regTabla[7] & 0xFFFF;
+    uint16_t tamPila = segTabla[codSeg].tamaño;
+
+    // 2. Evaluamos el Underflow ANTES de leer
+    if(offset_SP == tamPila){ 
+        printf("Stack underflow por pop , pila vacia\n");
         exit(1);
     }
-    else
-        if( ((regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF))>(regTabla[29]+segTabla[codSeg].tamaño) ){ //si SP es mayor a SS+tamaño luego del incremento entonces los bytes no son suficientes
-            printf("Stack underflow por pop,no hay suficientes bytes");
-            exit(1);
-        }
+    else if(offset_SP + 4 > tamPila){ 
+        printf("Stack underflow por pop, no hay suficientes bytes\n");
+        exit(1);
+    }
+     uint32_t valor=leerMemoria(regTabla[7],regTabla,segTabla,memoriaPrincipal,4);
     escribeOperando(reg1,valor,regTabla,segTabla,memoriaPrincipal);
     regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)+4)&0xFFFF);//Actualizo SP
 }
 void push(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t memoriaPrincipal[]){
     uint32_t valor=leerOperando(reg1,regTabla,segTabla,memoriaPrincipal);
 
-    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo SP
-    if(regTabla[7]<regTabla[29]){//si SP<SS entonces ya no hay espacio en la pila
-        printf("STACK OVERFLOW POR PUSH");
+    // 1. Aislamos los offsets actuales (sin signo)
+    uint16_t offset_SP = regTabla[7] & 0xFFFF;
+    uint16_t offset_SS = regTabla[29] & 0xFFFF;
+
+    // 2. Evaluamos ANTES de modificar el registro. 
+    // ¿El SP actual está a menos de 4 bytes de chocar con el fondo del segmento?
+    if (offset_SP < offset_SS + 4) { 
+        printf("STACK OVERFLOW POR PUSH\n");
         exit(1);
     }
+
+    // 3. Como pasó la prueba, ahora sí actualizamos el registro SP de forma segura
+    regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo SP
+   
     escribirMemoria(regTabla[7],valor,regTabla,segTabla,memoriaPrincipal,4);
 }
