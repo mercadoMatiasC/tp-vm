@@ -377,7 +377,6 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
 
     // 2. Construir el vector de palabras (char**) internamente
     int cantPalabras = 0;
-    cantPalabras+=indiceVMI!=-1;
     cantPalabras+=indiceVMX!=-1;
 
     cantPalabras += (*argc - indiceParam);
@@ -392,11 +391,9 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
     char * *vecPalabras = (char **) malloc(cantPalabras * sizeof(char *));
     int posPalabra = 0;
 
-    // Cargar el nombre del ejecutable (.vmx o .vmi)
+    // Cargar el nombre del ejecutable (.vmx)
     if (indiceVMX != -1) {
         vecPalabras[posPalabra++] = argv[(int)indiceVMX];
-    }if (indiceVMI != -1) {
-        vecPalabras[posPalabra++] = argv[(int)indiceVMI];
     }
 
     // Cargar las palabras tras el flag -p

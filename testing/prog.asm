@@ -1,0 +1,9 @@
+SYS 0xF
+mov b[ds+127],7
+MOV EDX,DS
+ADD EDX,123
+MOV ECX,50
+SYS 0x03
+
+
+SYS 0x04
