@@ -941,6 +941,7 @@ void pop(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t mem
     uint16_t tamPila = segTabla[codSeg].tamaño;
 
     // 2. Evaluamos el Underflow ANTES de leer
+  
     if(offset_SP == tamPila){ 
         printf("Stack underflow por pop , pila vacia\n");
         exit(1);

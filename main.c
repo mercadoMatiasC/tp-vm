@@ -708,10 +708,15 @@ int main(int argc, char *argv[]){
                 tamConst=((uint16_t)tamSegmentos[8]<<8) | tamSegmentos[9];
                 offsetEntry=((uint16_t)tamSegmentos[10]<<8) | tamSegmentos[11];
 
+
                 uint8_t vecCodigo[tamCodigo];
 
                 fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
-
+            
+                if(tamMemoria<(tamCodigo+tamParam+tamData+tamExtra+tamStack+tamConst)){
+                    printf("Memoria insuficiente \n");
+                    exit(1);
+                }
                 uint8_t vecConst[tamConst];
                 fread(vecConst, sizeof(uint8_t), tamConst, archExe);
                 iniciarTablaSegmentos2(segTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,tamParam);
@@ -719,6 +724,9 @@ int main(int argc, char *argv[]){
                 iniciarRegistros2(regTabla,tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam);
 
                 uint32_t direcFisicaCodigo = 0;
+
+
+
                 if(tamParam!=0){
                     agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecParam,tamParam);
                     direcFisicaCodigo+=tamParam;
