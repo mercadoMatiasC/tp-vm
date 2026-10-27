@@ -5,6 +5,7 @@
 // Declaración extern de la variable global (ej. el nombre del archivo .vmi)
 extern char *nombreArchivoVMI;
 extern uint16_t tamMemoria;
+extern int flagPasoAPaso;
 
 typedef void (*inst)(void);
 
