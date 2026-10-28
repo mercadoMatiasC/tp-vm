@@ -40,10 +40,10 @@ int validarID_VERSION(uint8_t cabecera[]){
     char id[6];
     uint8_t version=cabecera[5];
 
-    
+
     memcpy(id,cabecera,5); //copia al vector id los primeros 5 bytes de cabecera
     id[5]='\0';
-   
+
     if (!strcmp(id, ID) && (version==VERSION1 || version==VERSION2))
         return version;
     else
@@ -107,8 +107,8 @@ void iniciarRegistros2(uint32_t registros[],uint16_t tamCodigo,uint16_t tamExtra
     memset(registros, 0, sizeof(uint32_t)*CANT_REGISTROS); // inicializo todo en 0 para mantener limpieza
 
     uint8_t posTabla=0; //posicion en tabla de descriptores
-   
-    
+
+
     if(tamParam!=0){ //PS
         registros[31]=0x00000000;
         posTabla++;
@@ -456,16 +456,16 @@ uint8_t* crearVecParam(int *argc, char *argv[], uint16_t *tamParam, char indiceV
     // 1. El offset donde empiezan los punteros es el tamaño total de los textos
     *offsetPunterosTexto = tamBytesTexto;
 
-   
-    
+
+
     return vecParam;
 }
 void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[],uint8_t memoriaPrincipal[],regSegmento segTabla[],uint16_t offsetPunterosTexto){
-    uint32_t direcLogica= (regTabla[7] & 0xFFFF0000) | (uint16_t)( (( regTabla[7] & 0xFFFF) -4)&0xFFFF);//direcLogica que almacena el (SP), como 
-                                                                              //Como el SP en un inicio apunta por fuera del SS, le restamos 4 para iniciar la pila 
+    uint32_t direcLogica= (regTabla[7] & 0xFFFF0000) | (uint16_t)( (( regTabla[7] & 0xFFFF) -4)&0xFFFF);//direcLogica que almacena el (SP), como
+                                                                              //Como el SP en un inicio apunta por fuera del SS, le restamos 4 para iniciar la pila
      regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar *argv
-   
-    //Guardamos el *argv en la pila 
+
+    //Guardamos el *argv en la pila
     if(tamParam==0){
         escribirMemoria(direcLogica,0xFFFFFFFF,regTabla,segTabla,memoriaPrincipal,4);//Guardo el argv cuando no hay param.
         regTabla[7]=(regTabla[7] & 0xFFFF0000) | (uint16_t)(((regTabla[7] & 0xFFFF)-4)&0xFFFF);//Actualizo el SP para guardar argc
@@ -483,8 +483,8 @@ void inicializarSubrutinaPrincipal(int argc,uint16_t tamParam,uint32_t regTabla[
     //Al ser la subrutina principal, el ret sera 0xFFFFFFFF, por lo que al ejecutar la instruccion RET, el programa se detendra
     direcLogica=regTabla[7];
     escribirMemoria(direcLogica, 0xFFFFFFFF,regTabla, segTabla, memoriaPrincipal, 4);//Escribo el RET
-    //Y ahora el SP queda apuntando al RET 
-    
+    //Y ahora el SP queda apuntando al RET
+
 }
 
 int main(int argc, char *argv[]){
@@ -497,7 +497,7 @@ int main(int argc, char *argv[]){
     // Recorremos todos los argumentos ingresados
     for (int i = 1; i < argc; i++) {
         // 1. Si encontramos -p, guardamos el índice y cortamos el bucle
-        
+
         if (strcmp(argv[i], "-p") == 0) {
             hayParam=1;
             break;
@@ -601,7 +601,7 @@ int main(int argc, char *argv[]){
     uint8_t memoriaPrincipal[tamMemoria];
     uint8_t id_version[TAM_ID_VERSION];
     regSegmento segTabla[CANT_SEGMENTOS];
-    uint16_t tamCodigo,tamExtra,tamStack,tamConst,tamData,offsetEntry,tamParam;
+    uint16_t tamCodigo = 0,tamExtra = 0,tamStack = 0,tamConst = 0,tamData = 0,offsetEntry = 0,tamParam = 0;
     uint32_t regTabla[CANT_REGISTROS];
 
     uint8_t instruccion;
@@ -627,7 +627,7 @@ int main(int argc, char *argv[]){
                 tamCodigo = ((uint16_t)tamSegmentos[0]<<8) | tamSegmentos[1];
                 uint8_t vecCodigo[tamCodigo];
 
-               
+
                 segTabla[0].tamaño = tamCodigo;           //CS
                 segTabla[1].tamaño = TAM_RAM - tamCodigo; //DS
 
@@ -635,12 +635,12 @@ int main(int argc, char *argv[]){
                 iniciarRegistros(regTabla);
                 regTabla[31]=0xFFFFFFFF;//PS
                 regTabla[30]=0xFFFFFFFF;//KS
-                
+
                 regTabla[28]=0xFFFFFFFF;//ES
                 regTabla[29]=0xFFFFFFFF;//SS
 
                 regTabla[7]=0xFFFFFFFF;//Inicializo el registro SP
-    
+
                 fread(memoriaPrincipal, sizeof(uint8_t), tamCodigo, archExe);
 
 
@@ -709,7 +709,7 @@ int main(int argc, char *argv[]){
                 uint8_t vecCodigo[tamCodigo];
 
                 fread(vecCodigo, sizeof(uint8_t), tamCodigo, archExe);
-            
+
                 if(tamMemoria<(tamCodigo+tamParam+tamData+tamExtra+tamStack+tamConst)){
                     printf("Memoria insuficiente \n");
                     exit(1);
@@ -724,7 +724,7 @@ int main(int argc, char *argv[]){
 
 
 
-                if(tamParam!=0){
+                if(vecParam != NULL && tamParam > 0){
                     agregarSegmentoEnMemoria(memoriaPrincipal,direcFisicaCodigo,vecParam,tamParam);
                     direcFisicaCodigo+=tamParam;
                 }
@@ -831,7 +831,7 @@ int main(int argc, char *argv[]){
 
                     //Actualizo IP, si ocurre un salto se modifica en la misma funcion de salto
                     regTabla[0]+=tamInstruccion(instruccion);
-                
+
                     //Ejecuto la instruccion
                     codIns=instruccion & 0x1F;
 
@@ -851,17 +851,17 @@ int main(int argc, char *argv[]){
                                 printf("\nERROR: Instruccion invalida %X",codIns);
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
-                        if(flagPasoAPaso){//ejecutamos un SYS 0x4 
+                        if(flagPasoAPaso){//ejecutamos un SYS 0x4
                             if(flagPasoAPaso){
                                 // Verificamos si la instrucción que se ejecutó recién ya era el Breakpoint original.
                                 // (codIns == 0x00 para SYS y regTabla[2] tiene el valor 0x0F)
                                 int eraBreakpoint = (codIns == 0x00) && ((regTabla[2] & 0xFFFF) == 0x0F);
-                                
+
                                 // Si ya era un breakpoint, NO inyectamos uno nuevo, dejamos que de la vuelta.
                                 if (!eraBreakpoint) {
-                                    // Simulamos un OP1 para llamar al SYS 0x0F 
-                                    uint32_t op1Falso = (0x2<<24) | 0x0F; 
-                                    
+                                    // Simulamos un OP1 para llamar al SYS 0x0F
+                                    uint32_t op1Falso = (0x2<<24) | 0x0F;
+
                                     // Llamamos directamente a la función del SYS (índice 0x00)
                                     ((void (*)(uint32_t,uint32_t[], regSegmento[], uint8_t[]))vecInstrucciones[0x00])(op1Falso, regTabla, segTabla, memoriaPrincipal);
                                 }
