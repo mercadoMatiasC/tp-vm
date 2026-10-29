@@ -282,9 +282,31 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
         tamInstruccion++;
     }
 
-    if(tip1==1)
-        strcpy(vecAssembler[1], assemblerReg[(regOP1 & 0x1F)]);
-    else
+    if(tip1 == 1) {
+        uint8_t codReg = regOP1 & 0x1F;
+
+        if (codReg >= 10 && codReg <= 15) { //REVISAMOS SI EL OPERANDO ES UN REGISTRO DE PROPÓSITO GENERAL
+            uint8_t sectorReg = (regOP1 >> 5) & 0x03; //VEMOS LOS BITS 5 y 6
+            char nombreBase[8];
+            strcpy(nombreBase, assemblerReg[codReg]); //NOS COPIAMOS EL NOMBRE DEL REGISTRO SIN MODIFICAR
+
+            switch (sectorReg) {
+                case 0x00: //COMPLETO -> SIN MODIFICAR E@X
+                    strcpy(vecAssembler[1], nombreBase);
+                    break;
+                case 0x01: //4TO BYTE -> @L
+                    sprintf(vecAssembler[1], "%cL", nombreBase[1]);
+                    break;
+                case 0x02: //3ER BYTE -> @H
+                    sprintf(vecAssembler[1], "%cH", nombreBase[1]);
+                    break;
+                case 0x03: //2 BYTES MENOS SIGNIFICATIVOS -> @X
+                    sprintf(vecAssembler[1], "%c%c", nombreBase[1], nombreBase[2]);
+                    break;
+            }
+        } else
+            strcpy(vecAssembler[1], assemblerReg[codReg]); //SI NO ES UN REGISTRO DE PROPÓSITO GENERAL SE MUESTRA TAL CUAL
+    }else
         if(tip1==2)
             sprintf(vecAssembler[1], "%d", (int16_t)(regOP1 & 0xFFFF));
         else
@@ -307,9 +329,31 @@ void disassembler(uint8_t instruccion,uint32_t direcFisica, uint32_t regOP1,uint
                 strcat(vecAssembler[1], "]");
             }
 
-    if(tip2==1)
-        strcpy(vecAssembler[2], assemblerReg[(regOP2 & 0x1F)]);
-    else
+    if(tip2 == 1) {
+        uint8_t codReg = regOP2 & 0x1F;
+
+        if (codReg >= 10 && codReg <= 15) { //REVISAMOS SI EL OPERANDO ES UN REGISTRO DE PROPÓSITO GENERAL
+            uint8_t sectorReg = (regOP2 >> 5) & 0x03; //VEMOS LOS BITS 5 y 6
+            char nombreBase[8];
+            strcpy(nombreBase, assemblerReg[codReg]); //NOS COPIAMOS EL NOMBRE DEL REGISTRO SIN MODIFICAR
+
+            switch (sectorReg) {
+                case 0x00: //COMPLETO -> SIN MODIFICAR E@X
+                    strcpy(vecAssembler[2], nombreBase);
+                    break;
+                case 0x01: //4TO BYTE -> @L
+                    sprintf(vecAssembler[2], "%cL", nombreBase[1]);
+                    break;
+                case 0x02: //3ER BYTE -> @H
+                    sprintf(vecAssembler[2], "%cH", nombreBase[1]);
+                    break;
+                case 0x03: //2 BYTES MENOS SIGNIFICATIVOS -> @X
+                    sprintf(vecAssembler[2], "%c%c", nombreBase[1], nombreBase[2]);
+                    break;
+            }
+        } else
+            strcpy(vecAssembler[2], assemblerReg[codReg]); //SI NO ES UN REGISTRO DE PROPÓSITO GENERAL SE MUESTRA TAL CUAL
+    }else
         if(tip2==2)
             sprintf(vecAssembler[2], "%d", (int16_t)(regOP2 & 0xFFFF));
         else
