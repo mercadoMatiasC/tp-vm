@@ -1,4 +1,5 @@
 \\EXTRA 1024
+
 null        equ     -1
 size_es     equ     1024
 ; inicializar HEAP
