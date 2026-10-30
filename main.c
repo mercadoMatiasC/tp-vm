@@ -896,13 +896,14 @@ int main(int argc, char *argv[]){
                                 exit(1); //termina de forma abrupta la ejecucion del programa
                             }
                         if(flagPasoAPaso){//ejecutamos un SYS 0x4
-                            if(flagPasoAPaso){
+                            if(flagPasoAPaso ){
                                 // Verificamos si la instrucción que se ejecutó recién ya era el Breakpoint original.
                                 // (codIns == 0x00 para SYS y regTabla[2] tiene el valor 0x0F)
                                 int eraBreakpoint = (codIns == 0x00) && ((regTabla[2] & 0xFFFF) == 0x0F);
-
+                                // 2. NUEVO: Verificamos si la instrucción recién ejecutada (ej. STOP) finalizó el programa
+                                int terminoPrograma = (regTabla[0] == 0xFFFFFFFF) || ((regTabla[0] & 0xFFFF) >= tamCodigo);
                                 // Si ya era un breakpoint, NO inyectamos uno nuevo, dejamos que de la vuelta.
-                                if (!eraBreakpoint) {
+                                if (!eraBreakpoint && !terminoPrograma) {
                                     // Simulamos un OP1 para llamar al SYS 0x0F
                                     uint32_t op1Falso = (0x2<<24) | 0x0F;
 

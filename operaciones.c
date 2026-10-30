@@ -517,7 +517,9 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                             else
                                 if(regTabla[10]==0x01)
                                     scanf(" %d",&dato);
-
+                // --- SOLUCIÓN: Limpiar el buffer 
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
             }
         }
@@ -529,6 +531,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                                 guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
                                 printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
 
+                                
                                 char comando[10];
                                 int comandoValido = 0; // Variable de control para el bucle
 
