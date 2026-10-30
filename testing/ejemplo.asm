@@ -1,1 +1,2 @@
-push bx
+\\STACK 10000
+MOV EAX,2
