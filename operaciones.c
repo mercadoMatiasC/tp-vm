@@ -229,14 +229,14 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
         int16_t offset = (regOp >> 8) & 0x0000FFFF;
         uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
 
-       
+
         uint8_t cantBytes = (regOp >> 5) & 0x7; // Cantidad de bytes a filtrar
         switch(cantBytes) {
             case 0x01: // Byte más significativo del valor leído
-                valor = (uint32_t)(int32_t)(int8_t)leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 1);;
+                valor = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 1);;
                 break;
             case 0x02: // 2 bytes más significativos del valor leído
-                valor = (uint32_t)(int32_t)(int16_t)leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 2);
+                valor = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 2);
                 break;
             case 0x04: // 4 bytes completos
                 // Leemos 4 bytes base de la memoria principal
@@ -517,7 +517,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                             else
                                 if(regTabla[10]==0x01)
                                     scanf(" %d",&dato);
-                // --- SOLUCIÓN: Limpiar el buffer 
+                // --- SOLUCIÓN: Limpiar el buffer
                 int c;
                 while ((c = getchar()) != '\n' && c != EOF);
                 escribirMemoria(direcLogica,dato,regTabla,segTabla,memoriaPrincipal,cantBytes);
@@ -531,7 +531,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                                 guardarImagenVMI(nombreArchivoVMI, regTabla, segTabla, memoriaPrincipal);
                                 printf("\n[BREAKPOINT] Imagen generada en '%s'.\n", nombreArchivoVMI);
 
-                                
+
                                 char comando[10];
                                 int comandoValido = 0; // Variable de control para el bucle
 
@@ -602,10 +602,10 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                         int contEscrito = 0;
                         direcLogica = regTabla[13]; //EDX tiene la dir lógica
                         int32_t limite = regTabla[12]; //ECX indica cant de caracteres
-                        char c;
+                        int c;
                         printf("Ingrese una cadena \n");
 
-                        while((c = getchar()) != '\n'){
+                        while((c = getchar()) != '\n' || c != EOF){ // el EOF aplica solo si los comandos se mandan por un archivo de texto o script
                             if(limite == -1 || contEscrito < limite){
                                 escribirMemoria(direcLogica + contEscrito, c, regTabla, segTabla, memoriaPrincipal, cantBytes);
                                 ++contEscrito; // Avanzamos a la siguiente posición de memoria
