@@ -229,18 +229,18 @@ uint32_t leerOperando(uint32_t regOp, uint32_t regTabla[], regSegmento segTabla[
         int16_t offset = (regOp >> 8) & 0x0000FFFF;
         uint32_t direcLogica = (regTabla[codReg] & 0xFFFF0000) | (uint16_t)((regTabla[codReg] & 0xFFFF) + offset);
 
-        // Leemos 4 bytes base de la memoria principal
-        valor = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 4);
-
+       
         uint8_t cantBytes = (regOp >> 5) & 0x7; // Cantidad de bytes a filtrar
         switch(cantBytes) {
             case 0x01: // Byte más significativo del valor leído
-                valor = (uint32_t)(int32_t)(int8_t)(valor >> 24);
+                valor = (uint32_t)(int32_t)(int8_t)leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 1);;
                 break;
             case 0x02: // 2 bytes más significativos del valor leído
-                valor = (uint32_t)(int32_t)(int16_t)(valor >> 16);
+                valor = (uint32_t)(int32_t)(int16_t)leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 2);
                 break;
             case 0x04: // 4 bytes completos
+                // Leemos 4 bytes base de la memoria principal
+                valor = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, 4);
                 break;
             default:
                 break;
@@ -445,7 +445,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
 
     // Extraemos tamaño (16 bits superiores) y cantidad (16 bits inferiores) de ECX (regTabla[12])
     uint16_t cantBytes = (regTabla[12] >> 16) & 0xFFFF;
-    uint8_t cantCeldas = regTabla[12] & 0xFFFF;
+    uint16_t cantCeldas = regTabla[12] & 0xFFFF;
     char cadBinario[33];
     int32_t dato;
 

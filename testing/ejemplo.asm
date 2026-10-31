@@ -1,14 +1,17 @@
 inicio:
+    sys 0xF 
+    mov [DS],-30330
     ; 1. Configurar registros para SYS 1 (READ)
     mov eax, 0x02    ; Activamos lectura de caracteres (Bit 1)
     mov edx, DS      ; Base lógica: Segmento de Datos
     ; add edx, 10    ; (Opcional) Le podés sumar un offset si querés guardarlo más adelante
 
     ldl ecx, 1       ; Cantidad de celdas a leer = 1
-    ldh ecx, 1       ; Tamaño de celda = 1 byte (carácter)
+    ldh ecx, 4       ; Tamaño de celda = 1 byte (carácter)
 
     ; 2. Ejecutar la lectura
     sys 0x1          ; Pausa la VM, te muestra el prompt "[XXXX]: " y espera tu letra
+
 
     ; 3. Clavar el BREAKPOINT justo después
     sys 0xF          ; La VM genera la imagen ".vmi" y te abre el menú "vmg>"
