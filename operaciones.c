@@ -603,6 +603,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                         direcLogica = regTabla[13]; //EDX tiene la dir lógica
                         int32_t limite = regTabla[12]; //ECX indica cant de caracteres
                         char c;
+                        printf("Ingrese una cadena \n");
 
                         while((c = getchar()) != '\n'){
                             if(limite == -1 || contEscrito < limite){
