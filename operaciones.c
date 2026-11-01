@@ -579,7 +579,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                     dato = leerMemoria(direcLogica, regTabla, segTabla, memoriaPrincipal, cantBytes);
                     int i=0;
                     uint32_t direcFisica = convertirDirecLogica(direcLogica, segTabla,cantBytes);
-                    printf("[%04X]: ", direcFisica);//Imprime en donde esta guardada la cadena
+                    //printf("[%04X]: ", direcFisica);//Imprime en donde esta guardada la cadena
                     while(dato!=0){ // \0 vale 0 y es el caracter de fin de cadena
 
                         uint8_t caracter;

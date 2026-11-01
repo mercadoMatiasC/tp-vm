@@ -1,2 +1,2 @@
-vmt ejemplo.asm ejemplo.vmx -o v=2
-mv -f ejemplo.vmx "$HOME/TU RUTA/tp-vm/"
+vmt param.asm param.vmx -o v=2
+mv -f param.vmx "$HOME/TU RUTA/tp-vm/"
