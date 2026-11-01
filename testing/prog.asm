@@ -1,9 +1,7 @@
-SYS 0xF
-mov b[ds+127],7
-MOV EDX,DS
-ADD EDX,123
-MOV ECX,50
-SYS 0x03
-
-
-SYS 0x04
+nombre equ "VMX26"
+abc equ "abc\b\n\r"
+nose equ "Fund. de la Arq. de Computadoras"
+SHL EL,1
+MOV b[DS+0],AH
+MOV CX,w[EDX+0]
+MOV w[DS+2],l[DS+10]

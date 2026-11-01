@@ -1,3 +1,3 @@
 @echo off
-start /wait vmt ejemplo.asm ejemplo.vmx -o v=2
-move /y ejemplo.vmx "C:\MV"
+start /wait vmt param.asm param.vmx -o v=2
+move /y param.vmx "C:\MV"

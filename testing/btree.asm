@@ -316,3 +316,37 @@ fin:  pop eax
         mov sp, bp
         pop bp
         ret
+;push <<root*>>
+;call alturaArbolABB
+;add sp,4
+;Retorna en eax la altura del ABB
+
+alturaArbolABB: push bp
+		mov bp,sp
+		sub sp,4
+		push ebx
+		mov ebx,[bp+8]
+		cmp ebx,null
+		jz casoBase
+		push [ebx+left]
+		call alturaArbolABB
+		add sp,4
+		mov [bp-4],eax
+		push [ebx+right]
+		call alturaArbolABB
+		add sp,4
+		cmp eax,[bp-4]
+		jp alturaDer
+		jn alturaIzq
+alturaDer:	add eax,1
+		jmp fin
+alturaIzq:	mov eax,[bp-4]
+		add eax,1
+		jmp fin
+casoBase:	mov eax,0
+fin:		pop ebx
+		add sp,4
+		mov sp,bp
+		pop bp	
+		ret
+

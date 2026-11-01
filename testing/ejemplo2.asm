@@ -80,6 +80,8 @@ MAIN:   push bp
         call informaExiste1
         add sp,8
 
+        
+
 
 main_end:   pop edx
         pop eax
