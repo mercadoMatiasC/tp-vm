@@ -605,7 +605,7 @@ void  sys(uint32_t reg1, uint32_t regTabla[], regSegmento segTabla[], uint8_t me
                         int c;
                         printf("Ingrese una cadena \n");
 
-                        while((c = getchar()) != '\n' || c != EOF){ // el EOF aplica solo si los comandos se mandan por un archivo de texto o script
+                        while((c = getchar()) != '\n' && (c != EOF)){ // el EOF aplica solo si los comandos se mandan por un archivo de texto o script
                             if(limite == -1 || contEscrito < limite){
                                 escribirMemoria(direcLogica + contEscrito, c, regTabla, segTabla, memoriaPrincipal, cantBytes);
                                 ++contEscrito; // Avanzamos a la siguiente posición de memoria
